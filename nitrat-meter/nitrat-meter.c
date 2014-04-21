@@ -20,6 +20,7 @@
 #include <stdio.h>                      //Подключение библиотеки работы со строковыми функциями
 #include <stdlib.h>                     //Подключение библиотеки работы со строковыми функциями
 #include <util/delay.h>
+#include <stdbool.h>
 #include "n3310lcd.h"                   //Подключение библиотеки функция для LCD NOKIA 3310
 
 #include "strings_data.h"
@@ -217,13 +218,6 @@ void batt (void);                        //Измерение напряжения аккумулятора с 1
 unsigned int clk_Gx10 (unsigned int ADC10);//Функция вычисления проводимости продукта в мкСм*10
 unsigned int clk_Rx (unsigned int ADC10);//Функция вычисления сопротивления продукта в Омах
 unsigned char knopka (void);             //Определение нажатых кнопок
-void LcdAnim (void);                     //Функция вывода аннимации в виде заполняющейся шкалы процесса замера
-void LcdCifr (unsigned char gash, unsigned int data, unsigned char l, unsigned char r);//Функция вывода (r+l)-значн.числа типа unsigned int с гаш.незнач.нуля с текущей позиции
-void LcdCifrBuf (unsigned char gash, unsigned int data, unsigned char l, unsigned char r, unsigned char act);//Функция вывода (r+l)-значн.числа типа unsigned int в буфер с гаш.незнач.нуля
-void LcdNadp_10 (unsigned char n);       //Функция вывода надписи из 10 символов из массива nadp_10 с текущей позиции
-void LcdNadp_8 (unsigned char n);        //Функция вывода надписи из 8 символов из массива nadp_8 с текущей позиции
-void LcdNadp_6 (unsigned char n);        //Функция вывода надписи из 6 символов из массива nadp_6 с текущей позиции
-void LcdNadp_4 (unsigned char n);        //Функция вывода надписи из 4 символов из массива nadp_4 с текущей позиции
 void LoadEE(void);                       //Загрузка глобальных переменных из EEPROM
 void menu (void);                        //Функция вывода меню
 void menumess (unsigned char ms);        //Функция вывода меню сообщений

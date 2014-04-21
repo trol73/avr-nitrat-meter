@@ -1,3 +1,5 @@
+#define CHAR_ARROW_RIGHT_FILLED			166                         //Символ закрашенного треугольника вправо |>
+
 // Массив надписей меню ПДК из 12 символов
 const unsigned char PROGMEM nadp_mPDK[31][12]= {
 	"Абрикос   60",
@@ -33,11 +35,19 @@ const unsigned char PROGMEM nadp_mPDK[31][12]= {
 	"Прочее   200"
 };
 
+const uint8_t PROGMEM STR_MAIN_MENU_MEASSURE[] = "Измерение  \xA5";
+const uint8_t PROGMEM STR_MAIN_MENU_SETTINGS[] = "Настройки  \xA5";
+const uint8_t PROGMEM STR_MAIN_MENU_LIMITS[] = "Нормы ПДК  \xA5";
+
+const uint8_t PROGMEM STR_UAKK_V[] = "Uакк,В";
+const uint8_t PROGMEM STR__V[] = " В";
+
+
 // Массив надписей из 10 символов
 const unsigned char PROGMEM nadp_10[15][10]= {
-	"Измерение ",                          //0
-	"Настройки ",                          //1
-	"Нормы ПДК ",                          //2
+	"Измерение ",                          //0	!!
+	"Настройки ",                          //1	!!
+	"Нормы ПДК ",                          //2	!!
 	" ПРОДУКТ: ",                          //3
 	" НАСТРОЙКИ",                          //4
 	"КАЛИБРОВКА",                          //5
@@ -82,7 +92,7 @@ const unsigned char PROGMEM nadp_6[8][6]= {
 	"Макс. ",                              //1
 	"Мин.  ",                              //2
 	"Uакк. ",                              //3
-	"Uакк,В",                              //4
+	"Uакк,В",                              //4	!!!
 	"Rx,Ом ",                              //5
 	"(мкСм)",                              //6
 	" мкСм ",                              //7

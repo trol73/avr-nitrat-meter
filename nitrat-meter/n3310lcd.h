@@ -4,14 +4,23 @@
 для оригинального дисплея от NOKIA 3310 и "китайской" версии дисплея
 48x84 пикселей, 6x14 символов
 ********************************************************************************/
+
+#define DISPLAY_CHINA		0			// 1 - работа по алгоритмам "китайского" дисплея, 0 - оригинального Nokia
+#define DISPLAY_CHECK_ARGS	0			// 1 - выполнять проверку передаваемых аргументов
+
+#define DISPLAY_MODE_BLANK	0b00001000	// display blank
+#define DISPLAY_MODE_FILL 	0b00001001	// all display segments on
+#define DISPLAY_MODE_NORMAL	0b00001100	// normal mode
+#define DISPLAY_MODE_INVERT	0b00001101	// inverse video mode
+
 //
 #include <avr/io.h>                      //Подключение системной библиотеки
 #include <string.h>                      //Подключение библиотеки работы со строковыми функциями
 #include <avr/pgmspace.h>                //Подключение библиотеки массивов
-unsigned char china=0;                   //1 - работа по алгоритмам "китайского" дисплея, 0 - оригинального Nokia
+
 //Конфигурация SPI-интерфейса
-#define SPCR_val 0b01010000;             //Включение SPI,первый-старший разряд,Master,SCK положит.полярн.,fclc/4
-#define SPSR_val 0b00000001;             //Удвоение частоты (fclc/2)
+#define SPCR_VAL 0b01010000;             //Включение SPI,первый-старший разряд,Master,SCK положит.полярн.,fclc/4
+#define SPSR_VAL 0b00000001;             //Удвоение частоты (fclc/2)
 //
 //Конфигурация выводов МК для управления ЖКИ
 #define LCD_DC_PORT PORTB                //DC (команда-данные)
@@ -37,13 +46,13 @@ unsigned char china=0;                   //1 - работа по алгоритмам "китайского"
 //************************************************************************************************************************
 //Настройки контроллера дисплея и переменные для работы с ним
 //************************************************************************************************************************
-#define PIXEL_OFF 0                      //Режимы отображения пикселя - используются в графических функциях
-#define PIXEL_ON  1
-#define PIXEL_XOR  2
+#define PIXEL_OFF	0                      //Режимы отображения пикселя - используются в графических функциях
+#define PIXEL_ON	1
+#define PIXEL_XOR	2
 //Разрешение экрана
 #define LCD_X_RES  84                    //По горизонтали
 #define LCD_Y_RES  48                    //По вертикали
-#define LCD_CACHSIZE  LCD_X_RES*LCD_Y_RES/8 //Размер кэша
+#define LCD_CACHSIZE  (LCD_X_RES*LCD_Y_RES/8) //Размер кэша
 //Разрешение контроллера ЖКИ (предполагаемое, но работает)
 #define Cntr_X_RES      102              //По горизонтали
 #define Cntr_Y_RES      64               //По вертикали
@@ -52,69 +61,69 @@ unsigned char china=0;                   //1 - работа по алгоритмам "китайского"
 #define LCD_CMD         0                //Команда
 #define LCD_DATA        1                //Данные
 //
-/*Массив в flash-памяти для задания режима дисплея (mode)*/
-const unsigned char mas_mode[] PROGMEM =
-//static unsigned char __attribute__ ((progmem)) mas_mode[]=
-{ 0b00001000, 0b00001001, 0b00001100, 0b00001101 };
 //
 //
-unsigned char lcd_buf[15];               //Текстовый буфер для вывода на LCD
-unsigned char power_down=0;              //Power-down control: 0 - chip is active, 1 - chip is in PD-mode
-unsigned char addressing=0;              //Направление адресации: 0 - горизонтальная, 1- вертикальная
-unsigned char temp_control=3;            //Температурный коэффициент, 0..3
-unsigned char bias=3;//3;                    //Смещение, 0..7
-unsigned char Vop=70;//70                   //Рабочее напрядение LCD, 0..127 (определяет контрастность)
-unsigned char disp_config=2;             //Режим дисплея: 0 - blank, 1 - all on, 2 - normal, 3 - inverse
-unsigned char LcdCache[LCD_CACHSIZE];    //Кэш-буфер в ОЗУ МК (84*48 бит = 504 байт)
+uint8_t lcd_buf[15];               //Текстовый буфер для вывода на LCD
+uint8_t power_down=0;              //Power-down control: 0 - chip is active, 1 - chip is in PD-mode
+uint8_t addressing=0;              //Направление адресации: 0 - горизонтальная, 1- вертикальная
+uint8_t temp_control=3;            //Температурный коэффициент, 0..3
+uint8_t bias=3;//3;                    //Смещение, 0..7
+uint8_t Vop=70;//70                   //Рабочее напрядение LCD, 0..127 (определяет контрастность)
+uint8_t disp_config=2;             //Режим дисплея: 0 - blank, 1 - all on, 2 - normal, 3 - inverse
+uint8_t LcdCache[LCD_CACHSIZE];    //Кэш-буфер в ОЗУ МК (84*48 бит = 504 байт)
 unsigned int  LcdCacheIdx;               //Кэш-индекс
 //Для китайского дисплея
-unsigned char shift=5;                   //0..63 - сдвиг экрана вверх, в пикселах
-unsigned char x_mirror=0;                //Зеркалирование по X: 0 - выкл., 1 - вкл.
-unsigned char y_mirror=0;                //Зеркалирование по Y: 0 - выкл., 1 - вкл.
-unsigned char SPI_invert=0;              //Порядок битов в SPI: 0 - MSB first, 1 - LSB first
+uint8_t shift=5;                   //0..63 - сдвиг экрана вверх, в пикселах
+uint8_t x_mirror=0;                //Зеркалирование по X: 0 - выкл., 1 - вкл.
+uint8_t y_mirror=0;                //Зеркалирование по Y: 0 - выкл., 1 - вкл.
+uint8_t SPI_invert=0;              //Порядок битов в SPI: 0 - MSB first, 1 - LSB first
 //
 /*-----Инициализация внешних функций-----*/
-extern void tayms (unsigned int t);      //Пауза в мс (1...65535)
+//extern void tayms (unsigned int t);      //Пауза в мс (1...65535)
 //************************************************************************************************************************
 /*-------------------------------Инициализация внутренних функций для работы с ЖКИ--------------------------------------*/
 //************************************************************************************************************************
-void LcdSend (unsigned char data, unsigned char cmd);//Передача данных в ЖКИ
-void LcdUpdate (void);                               //Копирование буфера в ОЗУ ЖКИ
-void LcdClear (void);                                //Очистка дисплея
-void LcdInit ( void );                               //Настройка SPI и дисплея
-void LcdContrast (unsigned char contrast);           //Установка контраста от 0 до 127 (регулируется только у китайского дисплея)
-void LcdMode (unsigned char mode);                   //Режимы дисплея: 0-blank(чистый), 1-all on(залит), 2-normal(норм.), 3-inverse(инверсн.)
-void LcdPwrMode (void);                              //Инвертирует состояние вкл/выкл дисплея
-void LcdImage (const unsigned char *imageData);      //Вывод изображения
-void LcdPixel (unsigned char x, unsigned char y, unsigned char mode); //Управление пикселем с координатами (x, y), mode -> Off, On or Xor
-void LcdLine (unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2, unsigned char mode); //Вывод линии
+void LcdSend(uint8_t data, uint8_t cmd);//Передача данных в ЖКИ
+void LcdUpdate();                               //Копирование буфера в ОЗУ ЖКИ
+void LcdClear();                                //Очистка дисплея
+void LcdInit();                               //Настройка SPI и дисплея
+void LcdContrast (uint8_t contrast);           //Установка контраста от 0 до 127 (регулируется только у китайского дисплея)
+void LcdMode(uint8_t mode);                   //Режимы дисплея: 0-blank(чистый), 1-all on(залит), 2-normal(норм.), 3-inverse(инверсн.)
+void LcdPwrMode();                              //Инвертирует состояние вкл/выкл дисплея
+void LcdImage(const uint8_t *imageData);      //Вывод изображения
+void LcdPixel(uint8_t x, uint8_t y, uint8_t mode); //Управление пикселем с координатами (x, y), mode -> Off, On or Xor
+void LcdLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t mode); //Вывод линии
 void LcdCircle(char x, char y, char radius, unsigned char mode);   //Вывод круга с координатами центра и радиусом
-void LcdBatt(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2, unsigned char persent);//Вывод батарейки с заполнением ее на %
-void LcdGotoXYFont (unsigned char x, unsigned char y);//Установка курсора в положение xy (x=0...5, y=0...13)
-void clean_lcd_buf (void);                            //Очистка текстового буфера
-void clean_cache (void);                              //Очистка КЭШ-буфера в ОЗУ МК
-void LcdChrXY (unsigned char x, unsigned char y, unsigned char ch);//Функция вывода символа в позицию x, y
-void LcdChr (unsigned char ch);                       //Вывод символа в текущей позиции
-void LcdChrInv (unsigned char ch);                    //Вывод инвертированного символа в текущей позиции
-void LcdChrBig (unsigned char ch);                    //Вывод символа на текущем месте (большой)
-void LcdChrBold (unsigned char ch);                   //Вывод символа на текущем месте (большой и жирный)
-void LcdStringXY (unsigned char x, unsigned char y);  //Вывод строки из буфера с позиции x, y
-void LcdString (void);                                //Вывод строки из буфера с текущей позиции
-void LcdStringInv (unsigned char x, unsigned char y); //Вывод инвертированной строки
-void LcdStringBig (unsigned char x, unsigned char y); //Вывод большой строки в позиции x, y
-void LcdStringBold (unsigned char x, unsigned char y);//Вывод большой и жирной строки позиции x, y
+void LcdBatt(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t persent);//Вывод батарейки с заполнением ее на %
+void lcd_GotoXY(uint8_t x, uint8_t y);//Установка курсора в положение xy (x=0...5, y=0...13)
+void clean_lcd_buf();                            //Очистка текстового буфера
+void clean_cache();                              //Очистка КЭШ-буфера в ОЗУ МК
+void lcd_OutCharXY(uint8_t ch, uint8_t x, uint8_t y);//Функция вывода символа в позицию x, y
+void lcd_OutChar(uint8_t ch);                       //Вывод символа в текущей позиции
+void LcdChrInv(uint8_t ch);                    //Вывод инвертированного символа в текущей позиции
+void LcdChrBig(uint8_t ch);                    //Вывод символа на текущем месте (большой)
+void LcdChrBold(uint8_t ch);                   //Вывод символа на текущем месте (большой и жирный)
+void LcdStringXY(uint8_t x, uint8_t y);  //Вывод строки из буфера с позиции x, y
+void LcdString();                                //Вывод строки из буфера с текущей позиции
+void LcdStringInv(uint8_t x, uint8_t y); //Вывод инвертированной строки
+void LcdStringBig(uint8_t x, uint8_t y); //Вывод большой строки в позиции x, y
+void lcd_OutStr(PGM_P s);				// Вывод строки
+void lcd_OutStrXY(PGM_P s, uint8_t x, uint8_t y);				// Вывод строки
+
+//void lcd_outData(PGM_P s);			// вывод экрана данных
+void LcdStringBold(uint8_t x, uint8_t y);//Вывод большой и жирной строки позиции x, y
 void LcdStr (unsigned char *data);                    //Вывод строки "..." с текущей позиции
 void LcdStrInv (unsigned char *data);                 //Вывод инвертированной строки "..." с текущей позиции
 void LcdStrBig(unsigned char *data);                  //Вывод большой строки "..." с текущей позиции
 void LcdStrBold(unsigned char *data);                 //Вывод большой и жирной строки "..." с текущей позиции
 void LcdBar(int x1, int y1, int x2, int y2, unsigned char persent);//Вывод прогресс-бара и заполнение его на "процент"
-void LcdRect(unsigned char baseX, unsigned char baseY, unsigned char height, unsigned char width, unsigned char mode);//Функция рисования закрашенного прямоугольника
-void LcdBarLine(unsigned char line, unsigned char persent);//Вывод прогресс-бара в указанной строке
-void LcdSkalaXYFont(unsigned char x, unsigned char y, unsigned char w, unsigned char persent);//Функция вывода шкалы регулируемого параметра с высотой и координатами шрифта
+void LcdRect(uint8_t baseX, uint8_t baseY, uint8_t height, uint8_t width, uint8_t mode);//Функция рисования закрашенного прямоугольника
+void LcdBarLine(uint8_t line, uint8_t persent);//Вывод прогресс-бара в указанной строке
+void LcdSkalaXYFont(uint8_t x, uint8_t y, uint8_t w, uint8_t persent);//Функция вывода шкалы регулируемого параметра с высотой и координатами шрифта
 //*************************************************************************************************************************
 //
 //Массив ASCII (кодировка CP1251)в flash-памяти МК (5х256=1280 байт)
-const unsigned char FontLookup [1280] PROGMEM=
+const uint8_t FontLookup [1280] PROGMEM=
 { 0x00, 0x00, 0x00, 0x00, 0x00,          //  0 00
   0x00, 0x00, 0x5F, 0x00, 0x00,          //  1 01
   0x00, 0x07, 0x00, 0x07, 0x00,          //  2 02
@@ -374,148 +383,156 @@ const unsigned char FontLookup [1280] PROGMEM=
 };
 //
 /*------Функция передачи данных в ЖКИ-------*/
-void LcdSend (unsigned char data, unsigned char cmd)//0-команда, 1-данные
-{ LCD_CE_PORT&=~_BV(LCD_CE_PIN);         //CE=0 (включение контроллера дисплея)
-  if (cmd) LCD_DC_PORT|=_BV(LCD_DC_PIN); //Если данные - DC=1
-  else LCD_DC_PORT&=~_BV(LCD_DC_PIN);    //Иначе, если команда - DC=0
-  SPDR=data;                             //Передача данных в контроллер дисплея
-  while ((SPSR&0x80)!=0x80);             //Ожидание, пока не очистится Tx регистр
-  LCD_CE_PORT|=_BV(LCD_CE_PIN);          //CE=1 (выключение контроллера дисплея)
-  return;
+void LcdSend(uint8_t data, uint8_t cmd) {//0-команда, 1-данные
+	LCD_CE_PORT &= ~_BV(LCD_CE_PIN);         //CE=0 (включение контроллера дисплея)
+	if (cmd) {
+		LCD_DC_PORT |= _BV(LCD_DC_PIN); //Если данные - DC=1
+	} else {
+		LCD_DC_PORT &= ~_BV(LCD_DC_PIN);    //Иначе, если команда - DC=0
+	}
+	SPDR = data;                             //Передача данных в контроллер дисплея
+	while ((SPSR & 0x80) != 0x80);             //Ожидание, пока не очистится Tx регистр
+	LCD_CE_PORT |= _BV(LCD_CE_PIN);          //CE=1 (выключение контроллера дисплея)
 }
 //
 /*-----Функция инициализации SPI и дисплея-----*/
-void LcdInit (void)
-{ LCD_RST_PORT|=_BV(LCD_RST_PIN);        //RESET=1
-//Настройка портов ввода/вывода
-  LCD_RST_DDR|=_BV(LCD_RST_PIN);
-  LCD_DC_DDR|=_BV(LCD_DC_PIN);
-  LCD_CE_DDR|=_BV(LCD_CE_PIN);
-  LCD_MOSI_DDR|=_BV(LCD_MOSI_PIN);
-  LCD_CLK_DDR|=_BV(LCD_CLK_PIN);
-//
-  tayms(1);
-//Инициализация SPI-интерфейса
-  SPCR = SPCR_val;
-  SPSR = SPSR_val;
-//Формирование импульса сброса RESET
-  LCD_RST_PORT&=~_BV(LCD_RST_PIN);       //RESET=0
-  tayms(20);
-  LCD_RST_PORT|=_BV(LCD_RST_PIN);        //RESET=1
-//
-  LCD_CE_PORT|=_BV(LCD_CE_PIN);          //CE=1 (выключение контроллера дисплея)
-//Команды инициализации ЖКИ
-  LcdSend(0x21, LCD_CMD);                //LCD Extended Commands
-  LcdSend(0x04+temp_control, LCD_CMD);   //Set Temp coefficent
-  if (china==1)                          //Если китайский дисплей
-  { LcdSend(0x08|SPI_invert<<3, LCD_CMD);//Порядок битов в SPI
-  }
-  LcdSend(0x10+bias, LCD_CMD);           //LCD bias mode 1:48
-  if (china==1)                          //Если китайский дисплей
-  { LcdSend(0x40+shift, LCD_CMD);        //Первая строка выше экрана, отображение со второй
-  }
-  LcdSend(0x80+Vop, LCD_CMD);            //Set LCD Vop (Contrast)
-  if (china==1)                          //Если китайский дисплей
-  { LcdSend(0x20|x_mirror<<4|y_mirror<<3|power_down<<2, LCD_CMD);//LCD Standard Commands
-  }
-  LcdSend(0x20|power_down<<2|addressing<<1, LCD_CMD);//LCD Standard Commands
-  LcdSend(0x08|((disp_config<<1|disp_config)&0x05), LCD_CMD);//LCD mode
-//
-  LcdClear();                            //Очистка дисплея
-  return;
+void LcdInit() {
+	LCD_RST_PORT |= _BV(LCD_RST_PIN);        //RESET=1
+	// Настройка портов ввода/вывода
+	LCD_RST_DDR |= _BV(LCD_RST_PIN);
+	LCD_DC_DDR |= _BV(LCD_DC_PIN);
+	LCD_CE_DDR |= _BV(LCD_CE_PIN);
+	LCD_MOSI_DDR |= _BV(LCD_MOSI_PIN);
+	LCD_CLK_DDR |= _BV(LCD_CLK_PIN);
+
+	_delay_ms(1);
+	// Инициализация SPI-интерфейса
+	SPCR = SPCR_VAL;
+	SPSR = SPSR_VAL;
+	// Формирование импульса сброса RESET
+	LCD_RST_PORT &= ~_BV(LCD_RST_PIN);       //RESET=0
+	_delay_ms(20);
+	LCD_RST_PORT |= _BV(LCD_RST_PIN);        //RESET=1
+
+	LCD_CE_PORT |= _BV(LCD_CE_PIN);          //CE=1 (выключение контроллера дисплея)
+	// Команды инициализации ЖКИ
+	LcdSend(0x21, LCD_CMD);                //LCD Extended Commands
+	LcdSend(0x04+temp_control, LCD_CMD);   //Set Temp coefficent
+
+#if DISPLAY_CHINA
+	LcdSend(0x08 | SPI_invert<<3, LCD_CMD);//Порядок битов в SPI
+#endif
+
+	LcdSend(0x10+bias, LCD_CMD);           //LCD bias mode 1:48
+#if DISPLAY_CHINA
+	LcdSend(0x40+shift, LCD_CMD);        //Первая строка выше экрана, отображение со второй
+#endif
+
+	LcdSend(0x80+Vop, LCD_CMD);            //Set LCD Vop (Contrast)
+
+#if DISPLAY_CHINA
+	LcdSend(0x20|x_mirror<<4|y_mirror<<3|power_down<<2, LCD_CMD);//LCD Standard Commands
+#endif
+
+	LcdSend(0x20|power_down<<2|addressing<<1, LCD_CMD);//LCD Standard Commands
+	LcdSend(0x08|((disp_config<<1|disp_config)&0x05), LCD_CMD);//LCD mode
+
+	LcdClear();                            //Очистка дисплея
 }
 //
 /*-----Функция установки контрастности дисплея-----*/
-void LcdContrast (unsigned char contrast)//Контраст = 0...127 (регулируется только у китайского дисплея)
-{ if (contrast>127) return;
-  LcdSend(0x21, LCD_CMD);                //LCD Extended Commands
-  LcdSend(0x80|contrast, LCD_CMD);       //Set LCD Vop (Contrast)
-  LcdSend(0x20, LCD_CMD);                //LCD Standard Commands, Horizontal addressing mode
-  return;
+void LcdContrast (uint8_t contrast) {//Контраст = 0...127 (регулируется только у китайского дисплея)
+#ifdef DISPLAY_CHECK_ARGS
+	if (contrast > 127)
+		return;
+#endif
+	LcdSend(0x21, LCD_CMD);                //LCD Extended Commands
+	LcdSend(0x80|contrast, LCD_CMD);       //Set LCD Vop (Contrast)
+	LcdSend(0x20, LCD_CMD);                //LCD Standard Commands, Horizontal addressing mode
 }
 //
 /*-----Функция установки режима дисплея-----*/
-void LcdMode (unsigned char mode)        //mode: 0 - blank, 1 - all on, 2 - normal, 3 - inverse
-{ if (mode > 3) return;
-/*Команда "sets display configuration" 00001D0E:
-  00001000 - display blank
-  00001001 - all display segments on
-  00001100 - normal mode
-  00001101 - inverse video mode
-*/
-  LcdSend(pgm_read_byte(mas_mode+mode), LCD_CMD); //LCD mode
-  return;
+void LcdMode(uint8_t mode) {       // mode: DISPLAY_MODE_xxx
+	LcdSend(pgm_read_byte(mode), LCD_CMD);
 }
 //
 /*-----Функция инверсии состояния вкл/выкл дисплея-----*/
-void LcdPwrMode (void)
-{ if (power_down==0) power_down=1;
-  else power_down=0;
-  if (china==1)                          //Если китайский дисплей
-  { LcdSend(0x20|x_mirror<<4|y_mirror<<3|power_down<<2|addressing<<1, LCD_CMD);//LCD Standard Commands
-  }
-  else LcdSend(0x20|0<<2|addressing<<1, LCD_CMD);
-  return;
+void LcdPwrMode() {
+	power_down = 1 - power_down;
+
+#if DISPLAY_CHINA
+	LcdSend(0x20|x_mirror<<4|y_mirror<<3|power_down<<2|addressing<<1, LCD_CMD);//LCD Standard Commands
+#else
+	LcdSend(0x20|0<<2|addressing<<1, LCD_CMD);
+#endif
 }
 //
 /*-----Функция выключения дисплея-----*/
-void Lcd_off (void)
-{ if (china==1)                          //Если китайский дисплей
-  { LcdSend(0x20|x_mirror<<4|y_mirror<<3|1<<2|addressing<<1, LCD_CMD);//LCD Standard Commands
-  }
-  else LcdSend( 0x20|1<<2|addressing<<1, LCD_CMD );
-  return;
+void Lcd_off() {
+#if DISPLAY_CHINA
+	LcdSend(0x20|x_mirror<<4|y_mirror<<3|1<<2|addressing<<1, LCD_CMD);//LCD Standard Commands
+#else
+	LcdSend( 0x20|1<<2|addressing<<1, LCD_CMD );
+#endif
 }
 //
 /*-----Функция включения дисплея-----*/
-void Lcd_on (void)
-{ if (china==1)                          //Если китайский дисплей
-  { LcdSend(0x20|x_mirror<<4|y_mirror<<3|0<<2|addressing<<1, LCD_CMD);//LCD Standard Commands
-  }
-  else LcdSend(0x20|0<<2|addressing<<1, LCD_CMD);
-  return;
+void Lcd_on() {
+#if DISPLAY_CHINA
+	LcdSend(0x20|x_mirror<<4|y_mirror<<3|0<<2|addressing<<1, LCD_CMD);//LCD Standard Commands
+#else
+	LcdSend(0x20|0<<2|addressing<<1, LCD_CMD);
+#endif
 }
 //
 /*-----Функция очистки дисплея-----*/
-void LcdClear (void)
-{ unsigned int i;
-  for (i=0; i<LCD_CACHSIZE; i++) LcdCache[i]=0;//Запись кэш-памяти 0
-  LcdUpdate();                           //Копирование буфера в ОЗУ дисплея
-  return;
+void LcdClear() {
+	clean_cache();
+	LcdUpdate();                           //Копирование буфера в ОЗУ дисплея
 }
 //
 /*-----Функция вывода изображения-----*/
-void LcdImage (const unsigned char *imageData)
-{ unsigned int i;
-  for (i=0; i<LCD_CACHSIZE; i++) LcdCache[i]=pgm_read_byte(imageData+i);//Загрузка данных
-  LcdUpdate();                           //Копирование буфера в ОЗУ ЖКИ
-  return;
+void LcdImage(const uint8_t *imageData) {
+	for (uint16_t i = 0; i < LCD_CACHSIZE; i++)
+		LcdCache[i] = pgm_read_byte(imageData+i); //Загрузка данных
+	LcdUpdate();                           //Копирование буфера в ОЗУ ЖКИ
 }
 //
 /*-----Функция управления пикселем с координатами (x, y)-----*/
-void LcdPixel (unsigned char x, unsigned char y, unsigned char mode)//mode: PIXEL_ON или 1, PIXEL_OFF или 0, PIXEL_XOR или 2
-{ unsigned int index;
-  unsigned char offset, data;
-  if (x>LCD_X_RES) return;               //Если некорректные координаты X - выход
-  if (y>LCD_Y_RES) return;               //Если некорректные координаты Y - выход
-  index=(y/8)*84+x;                      //Вычисление номера байта в массиве памяти дисплея
-  offset=y-((y/8)*8);                    //Вычисление номера бита в этом байте
-  data=LcdCache[index];                  //Чтение байта по найденному индексу
-  if (mode==PIXEL_OFF) data&=(~(0x01<<offset));//Редактирование бита в этом байте
-  else if (mode==PIXEL_ON) data|=(0x01<<offset);
-  else if (mode==PIXEL_XOR) data^=(0x01<<offset);
-  LcdCache[index]=data;                  //Загрузка байта назад в кэш
-  return;
+void LcdPixel (uint8_t x, uint8_t y, uint8_t mode) {//mode: PIXEL_ON или 1, PIXEL_OFF или 0, PIXEL_XOR или 2
+#ifdef DISPLAY_CHECK_ARGS
+	if (x > LCD_X_RES || y > LCD_Y_RES)
+		return;               //Если некорректные координаты Y - выход
+#endif
+	uint16_t index = (y/8)*84+x;                      //Вычисление номера байта в массиве памяти дисплея
+	uint8_t offset = y - ((y/8)*8);                    //Вычисление номера бита в этом байте
+	uint8_t data = LcdCache[index];                  //Чтение байта по найденному индексу
+	switch (mode) {
+		case PIXEL_OFF:
+			data &= ~_BV(offset);
+			break;
+		case PIXEL_ON:
+			data |= ~_BV(offset);
+			break;
+		case PIXEL_XOR:
+			data ^= ~_BV(offset);
+			break;
+	}
+	LcdCache[index] = data;                  //Загрузка байта назад в кэш
 }
 //
 /*-----Функция вывода линии между двумя точками с координатами (x1, y1) и (x2,y2) по Брезенхейму-----*/
-void LcdLine (unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2, unsigned char mode)
-{ signed int dy=0;
-  signed int dx=0;
-  signed int stepx=0;
-  signed int stepy=0;
-  signed int fraction=0;
-  if ((x1>LCD_X_RES)||(x2>LCD_X_RES)||(y1>LCD_Y_RES)||(y2>LCD_Y_RES)) return;
+void LcdLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t mode) {
+	signed int dy=0;
+	signed int dx=0;
+	signed int stepx=0;
+	signed int stepy=0;
+	signed int fraction=0;
+#ifdef DISPLAY_CHECK_ARGS
+	if (x1 > LCD_X_RES || x2 > LCD_X_RES || y1 > LCD_Y_RES || y2 > LCD_Y_RES) {
+	return;
+	}
+#endif
 //Calculate differential form
 // dy   y2 - y1
 // -- = -------
@@ -534,7 +551,7 @@ void LcdLine (unsigned char x1, unsigned char y1, unsigned char x2, unsigned cha
   else stepx=1;
   dy<<=1;
   dx<<=1;
-  LcdPixel(x1,y1,mode);
+  LcdPixel(x1, y1, mode);
   if (dx>dy)
   { fraction=dy-(dx>>1); 
     while (x1!=x2)
@@ -544,7 +561,7 @@ void LcdLine (unsigned char x1, unsigned char y1, unsigned char x2, unsigned cha
       }
       x1+=stepx;
       fraction+=dy;  
-      LcdPixel(x1,y1,mode);
+      LcdPixel(x1 ,y1, mode);
     }
   }
   else
@@ -556,18 +573,21 @@ void LcdLine (unsigned char x1, unsigned char y1, unsigned char x2, unsigned cha
       }
       y1+=stepy;
       fraction+=dx;
-      LcdPixel(x1,y1,mode);
+      LcdPixel(x1, y1, mode);
     }
   }
-  return;
 }
 //
 /*-----Функция рисования круга с координатами (x, y) и радиусом по Брезенхейму-----*/
-void LcdCircle(char x, char y, char radius, unsigned char mode)
-{ signed char xc=0;
+void LcdCircle(char x, char y, char radius, uint8_t mode){
+	signed char xc=0;
   signed char yc=0;
   signed char p=0;
-  if ((x>LCD_X_RES)||(y>LCD_Y_RES)) return;
+#ifdef DISPLAY_CHECK_ARGS
+	if (x > LCD_X_RES || y > LCD_Y_RES) {
+		return;
+	}
+#endif
   yc=radius;
   p=3-(radius<<1);
   while (xc<=yc)
@@ -582,7 +602,6 @@ void LcdCircle(char x, char y, char radius, unsigned char mode)
     if (p<0) p+=(xc++ <<2)+6;
     else p+=((xc++ -yc--)<<2)+10;
   }
-  return;
 }
 //
 /*-----Функция рисования батарейки с заполнением в %-------*/
@@ -598,25 +617,29 @@ void LcdBatt(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char
   */
   unsigned char horizon_line, horizon_line2, i;
   unsigned char k=(x2-x1)/3;
-  if(persent>100)return;
-  LcdLine(x1,   y2,   x2,   y2,   1);    //Нижняя линия
-  LcdLine(x2,   y1+2, x2,   y2,   1);    //Линия справа
-  LcdLine(x1,   y1+2, x1,   y2,   1);    //Линия слева
-  LcdLine(x1,   y1+2, x2,   y1+2, 1);    //Верхняя линия
-  LcdLine(x1+k, y1+1, x2-k, y1+1, 1);    //Колпачок
-  LcdLine(x1+k, y1,   x2-k, y1,   1);    //Колпачок
+#ifdef DISPLAY_CHECK_ARGS
+	if (persent > 100) {
+		return;
+	}
+#endif
+  LcdLine(x1,   y2,   x2,   y2,   PIXEL_ON);    //Нижняя линия
+  LcdLine(x2,   y1+2, x2,   y2,   PIXEL_ON);    //Линия справа
+  LcdLine(x1,   y1+2, x1,   y2,   PIXEL_ON);    //Линия слева
+  LcdLine(x1,   y1+2, x2,   y1+2, PIXEL_ON);    //Верхняя линия
+  LcdLine(x1+k, y1+1, x2-k, y1+1, PIXEL_ON);    //Колпачок
+  LcdLine(x1+k, y1,   x2-k, y1,   PIXEL_ON);    //Колпачок
   horizon_line=persent*(y2-y1-5)/100;    //Уровень заливки
-  for(i=0; i<horizon_line; i++) LcdLine(x1+2,y2-2-i,x2-2,y2-2-i,1);//Заливка горизонтальными линиями
-  horizon_line2=(y2-y1-5);               //Верхний уровень для заливки
-  for(i=horizon_line2; i>horizon_line; i--) LcdLine(x1+2,y2-2-i,x2-2,y2-2-i,0);//Очистка до верха
-  return;
+	for(i=0; i<horizon_line; i++)
+		LcdLine(x1+2, y2-2-i, x2-2, y2-2-i, PIXEL_ON);//Заливка горизонтальными линиями
+	horizon_line2 = (y2-y1-5);               //Верхний уровень для заливки
+	for (i = horizon_line2; i > horizon_line; i--)
+		LcdLine(x1+2, y2-2-i, x2-2, y2-2-i, PIXEL_OFF);//Очистка до верха
 }
 //
 /*-----Функция рисования горизонтального прогресс-бара в указанной строке и заполнения его на "процент"------*/
-void LcdBarLine(unsigned char line, unsigned char persent)
-{ //line=0...42 - верхняя линия прогресс бара (высотой 5 пикселей)
+void LcdBarLine(unsigned char line, unsigned char persent) {
+	//line=0...42 - верхняя линия прогресс бара (высотой 5 пикселей)
   LcdBar(0, line, 83, line+4, persent);
-  return;
 }
 //
 /*-----Функция рисования прогресс-бара и заполнения его на "процент"-------*/
@@ -631,7 +654,11 @@ void LcdBar(int x1, int y1, int x2, int y2, unsigned char persent)
    (x2-x1)>=8
    (y2-y1)>=4
 */
-  if(persent>100)return;
+#ifdef DISPLAY_CHECK_ARGS
+	if (persent > 100) {
+	return;
+	}
+#endif
   LcdLine(x1+2,y2,x2-2,y2,1);            //Линия снизу
   LcdLine(x2-2,y1,x2-2,y2,1);            //Линия справа
   LcdLine(x1+2,y1,x1+2,y2,1);            //Линия слева
@@ -646,19 +673,23 @@ void LcdBar(int x1, int y1, int x2, int y2, unsigned char persent)
     if (persent>0) LcdLine(x1+4,i,x1+4+line,i,1); //Заливка
     i++;
   }
-  return;
 }
 //
 /*-----Функция рисования закрашенного прямоугольника-------*/
-void LcdRect(unsigned char baseX, unsigned char baseY, unsigned char height, unsigned char width, unsigned char mode)
+void LcdRect(uint8_t baseX, uint8_t baseY, uint8_t height, uint8_t width, uint8_t mode)
 { /*
     baseX - левая граница (0...83)
     baseY - нижняя граница (0...47)
     height - высота в пикселах
     width - ширина в пикселах
   */
+#ifdef DISPLAY_CHECK_ARGS
+	if (baseX > LCD_X_RES || baseY > LCD_Y_RES) {
+  		return;
+	}
+#endif
   unsigned char tmpIdxX, tmpIdxY, tmp;
-  if ((baseX>LCD_X_RES)||(baseY>LCD_Y_RES)) return;
+
   if (height>baseY) tmp=0;
   else tmp=1+baseY-height;
   for (tmpIdxY=tmp; tmpIdxY<=baseY; tmpIdxY++)
@@ -666,230 +697,287 @@ void LcdRect(unsigned char baseX, unsigned char baseY, unsigned char height, uns
     { LcdPixel(tmpIdxX, tmpIdxY, mode);
     }
   }
-  return;
 }
 //
 /*-----Функция установки курсора в положение xy для символа (x=0...5, y=0...13)-----*/
-void LcdGotoXYFont (unsigned char x, unsigned char y)
-{ if (x<=13 && y<=5) LcdCacheIdx=(int)(y)*84 + (int)(x)*6;
-  return;
+void lcd_GotoXY(uint8_t x, uint8_t y) {
+#ifdef DISPLAY_CHECK_ARGS
+	if (x > 13 || y > 5) {
+		return;
+	}
+#endif
+	LcdCacheIdx = (int)(y)*84 + (int)(x)*6;
 }
 //
 /*-----Функция очистки текстового буфера-----*/
-void clean_lcd_buf (void)
-{ unsigned char i;
-  for (i=0; i<14; i++) lcd_buf[i]=0;
-  return;
+void clean_lcd_buf() {
+	for (uint8_t i = 0; i < 14; i++)
+		lcd_buf[i] = 0;
 }
 //
 /*-----Функция очистки КЭШ-буфера ОЗУ МК-----*/
-void clean_cache (void)
-{ unsigned int i;
-  for (i=0; i<LCD_CACHSIZE; i++) LcdCache[i]=0;//Запись кэш-памяти 0
-  return;
+void clean_cache() {
+	for (uint16_t i = 0; i < LCD_CACHSIZE; i++) {
+		LcdCache[i] = 0;
+	}
 }
 //
 /*-----Функция вывода символа в позицию x, y-----*/
-void LcdChrXY (unsigned char x, unsigned char y, unsigned char ch)
-{ //Пример: LcdChrXY(x,y,'С'); или LcdChrXY(x,y,0...255);
-  LcdGotoXYFont(x, y);                   //Установка позиции
-  LcdChr(ch);                            //Вывод символа
-  return;
+void lcd_OutCharXY(uint8_t ch, uint8_t x, uint8_t y) {
+	lcd_GotoXY(x, y);
+	lcd_OutChar(ch);
 }
 //
 /*-----Функция вывода символа в текущей позиции-----*/
-void LcdChr (unsigned char ch)
-{ //Пример: LcdChr('С'); или LcdChr(0...255);
-  unsigned char i;
-  unsigned int s=ch;                     //Преобразование типа переменной
-  for (i=0; i<5; i++) LcdCache[LcdCacheIdx++]=pgm_read_byte(FontLookup+(s*5+i));//Выделение байта-столбика из символа и загрузка в массив - 5 раз
-  LcdCache[LcdCacheIdx++]=0x00;          //Введение пробела между символами
-  return;
+void lcd_OutChar(uint8_t ch) {
+	//Пример: LcdChr('С'); или LcdChr(0...255);
+	uint16_t s = ch*5;                     //Преобразование типа переменной
+	for (uint8_t i = 0; i < 5; i++) {
+		LcdCache[LcdCacheIdx++] = pgm_read_byte(FontLookup+s+i);//Выделение байта-столбика из символа и загрузка в массив - 5 раз
+	}
+	LcdCache[LcdCacheIdx++] = 0x00;          //Введение пробела между символами
 }
 //
 /*-----Функция вывода инвертированного символа в текущей позиции-----*/
-void LcdChrInv (unsigned char ch)
-{ unsigned char i;
-  unsigned int s=ch;                     //Преобразование типа переменной
-  for (i=0; i<5; i++) LcdCache[LcdCacheIdx++]=~pgm_read_byte(FontLookup+(s*5+i));//Выделение байта-столбика из символа и загрузка в массив - 5 раз
-  LcdCache[LcdCacheIdx++]=0xFF;          //Введение пробела между символами
-  return;
+void LcdChrInv(uint8_t ch) {
+	uint16_t s = ch*5;                     //Преобразование типа переменной
+	for (uint8_t i = 0; i < 5; i++) {
+  		LcdCache[LcdCacheIdx++] = ~pgm_read_byte(FontLookup+(s+i));//Выделение байта-столбика из символа и загрузка в массив - 5 раз
+	}
+	LcdCache[LcdCacheIdx++] = 0xFF;          //Введение пробела между символами
 }
 //
 /*-----Функция вывода большого и жирного символа в текущей позиции-----*/
-void LcdChrBold (unsigned char ch)
-{ unsigned char i;
-  unsigned int s=ch;                     //Преобразование типа переменной
-  unsigned char a=0, b=0, c=0;
-  for ( i=0; i<5; i++ )
-  { c=pgm_read_byte(FontLookup+(s*5+i)); //Выделение столбца из символа
-  //"растяжка" столбца на два байта
-    b=(c&0x01)*3;
-    b|=(c&0x02)*6;
-    b|=(c&0x04)*12;
-    b|=(c&0x08)*24;
-    c>>=4;
-    a=(c&0x01)*3;
-    a|=(c&0x02)*6;
-    a|=(c&0x04)*12;
-    a|=(c&0x08)*24;
-    LcdCache[LcdCacheIdx]=b;             //Копирование байт в экранный буфер
-    LcdCache[LcdCacheIdx+1]=b;           //Дублирование для получения жирного шрифта
-    LcdCache[LcdCacheIdx+84]=a;
-    LcdCache[LcdCacheIdx+85]=a;
-    LcdCacheIdx=LcdCacheIdx+2;
-  }
-  LcdCache[LcdCacheIdx++]=0x00;          //Пробел между символами
-  LcdCache[LcdCacheIdx++]=0x00;
-  return;
+void LcdChrBold (uint8_t ch) {
+	uint16_t s = ch*5;                     //Преобразование типа переменной
+	unsigned char a=0, b=0, c=0;
+	for (uint8_t i = 0; i < 5; i++) {
+		uint8_t c = pgm_read_byte(FontLookup+(s+i)); //Выделение столбца из символа
+		//"растяжка" столбца на два байта
+		uint8_t b = (c & 0x01)*3;
+		b |= (c & 0x02)*6;
+		b |= (c & 0x04)*12;
+		b |= (c & 0x08)*24;
+		c >>= 4;
+		uint8_t a = (c & 0x01)*3;
+		a |= (c & 0x02)*6;
+		a |= (c & 0x04)*12;
+		a |= (c & 0x08)*24;
+		LcdCache[LcdCacheIdx] = b;             //Копирование байт в экранный буфер
+		LcdCache[LcdCacheIdx+1] = b;           //Дублирование для получения жирного шрифта
+		LcdCache[LcdCacheIdx+84] = a;
+		LcdCache[LcdCacheIdx+85] = a;
+		LcdCacheIdx = LcdCacheIdx + 2;
+	}
+	LcdCache[LcdCacheIdx++] = 0x00;          //Пробел между символами
+	LcdCache[LcdCacheIdx++] = 0x00;
 }
 //
 /*-----Функция вывода большого символа в текущей позиции-----*/
-void LcdChrBig(unsigned char ch)
-{ unsigned char i;
-  unsigned int s=ch;                     //Преобразование типа переменной
-  unsigned char a=0, b=0, c=0;
-  for (i=0; i<5; i++)
-  { c=pgm_read_byte(FontLookup+(s*5+i)); //Выделение столбца из символа
-  //"растяжка" столбца на два байта
-    b=(c&0x01)*3;
-    b|=(c&0x02)*6;
-    b|=(c&0x04)*12;
-    b|=(c&0x08)*24;
-    c>>=4;
-    a=(c&0x01)*3;
-    a|=(c&0x02)*6;
-    a|=(c&0x04)*12;
-    a|=(c&0x08)*24;
-    LcdCache[LcdCacheIdx]=b;
-    LcdCache[LcdCacheIdx+84]=a;
-    LcdCacheIdx=LcdCacheIdx+1;
-  }
-  LcdCache[LcdCacheIdx++]=0x00;
-  return;
+void LcdChrBig(uint8_t ch) {
+	uint16_t s = ch*5;                     //Преобразование типа переменной
+	for (uint8_t i = 0; i < 5; i++) {
+		uint8_t c = pgm_read_byte(FontLookup+(s*5+i)); //Выделение столбца из символа
+		//"растяжка" столбца на два байта
+		uint8_t b = (c & 0x01)*3;
+		b |= (c & 0x02)*6;
+		b |= (c & 0x04)*12;
+		b |= (c & 0x08)*24;
+		c >>= 4;
+		uint8_t a = (c & 0x01)*3;
+		a |= (c & 0x02)*6;
+		a |= (c & 0x04)*12;
+		a |= (c & 0x08)*24;
+		LcdCache[LcdCacheIdx] = b;
+		LcdCache[LcdCacheIdx+84] = a;
+		LcdCacheIdx = LcdCacheIdx+1;
+	}
+	LcdCache[LcdCacheIdx++] = 0x00;
 }
 //
 /*-----Функция вывода строки из буфера с текущей позиции-----*/
-void LcdString (void)
-{ unsigned char i;
-  for (i=0; i<14; i++ ) if(lcd_buf[i]) LcdChr(lcd_buf[i]);
-  clean_lcd_buf();
-  return;
+void LcdString() {
+	for (uint8_t i = 0; i < 14; i++) {
+		if (lcd_buf[i]) {
+			lcd_OutChar(lcd_buf[i]);
+		}
+	}
+	clean_lcd_buf();
 }
 //
 /*-----Функция вывода строки из буфера с позиции xy-----*/
-void LcdStringXY (unsigned char x, unsigned char y)
-{ unsigned char i;
-  if ((x>13)||(y>5)) return;
-  LcdGotoXYFont(x, y);
-  for (i=0; i<15-x; i++ ) if(lcd_buf[i]) LcdChr(lcd_buf[i]);
-  clean_lcd_buf();
-  return;
+void LcdStringXY (uint8_t x, uint8_t y) {
+#ifdef DISPLAY_CHECK_ARGS
+	if (x > 13 || y > 5) {
+		return;
+	}
+#endif
+	lcd_GotoXY(x, y);
+	for (uint8_t i = 0; i < 15-x; i++) {
+		if (lcd_buf[i]) {
+			lcd_OutChar(lcd_buf[i]);
+		}
+	}
+	clean_lcd_buf();
 }
 //
 /*-----Функция вывода инвертированной строки из буфера с позиции xy-----*/
-void LcdStringInv (unsigned char x, unsigned char y)
-{ unsigned char i;
-  if ((x>13)||(y>5)) return;
-  LcdGotoXYFont (x, y);
-  for (i=0; i<15-x; i++ ) if (lcd_buf[i]) LcdChrInv (lcd_buf[i]);
-  clean_lcd_buf(); 
-  return;
+void LcdStringInv (uint8_t x, uint8_t y) {
+#ifdef DISPLAY_CHECK_ARGS
+	if (x > 13 || y > 5) {
+		return;
+	}
+#endif
+	lcd_GotoXY(x, y);
+	for (uint8_t i = 0; i < 15-x; i++) {
+		if (lcd_buf[i]) {
+			LcdChrInv(lcd_buf[i]);
+		}
+	}
+	clean_lcd_buf();
 }
 //
 /*-----Функция вывода большой строки из буфера с позиции xy-----*/
-void LcdStringBig (unsigned char x, unsigned char y)
-{ //y=0...4 (позиционирование по верхней строке)
-  //x=0...13
-  unsigned char i;
-  if ((x>13)||(y>4)) return;
-  LcdGotoXYFont(x, y);
-  for (i=0; i<15-x; i++) if(lcd_buf[i]) LcdChrBig(lcd_buf[i]); 
-  clean_lcd_buf();
-  return;
+void LcdStringBig (uint8_t x, uint8_t y) {
+	//y=0...4 (позиционирование по верхней строке)
+	//x=0...13
+#ifdef DISPLAY_CHECK_ARGS
+	if (x > 13 || y > 4) {
+		return;
+	}
+#endif
+	lcd_GotoXY(x, y);
+	for (uint8_t i = 0; i < 15-x; i++) {
+		if (lcd_buf[i]) {
+			LcdChrBig(lcd_buf[i]);
+		}
+	}
+	clean_lcd_buf();
 }
 //
 /*-----Функция вывода большой и жирной строки из буфера с позиции xy-----*/
-void LcdStringBold(unsigned char x, unsigned char y)
-{ //y=0...4 (позиционирование по верхней строке)
-  //x=0...13
-  unsigned char i;
-  if ((x>13)||(y>4)) return;
-  LcdGotoXYFont(x, y);
-  for (i=0; i<14-x; i++) if(lcd_buf[i]) LcdChrBold (lcd_buf[i]); 
-  clean_lcd_buf();
-  return;
+void LcdStringBold(uint8_t x, uint8_t y) {
+	// y=0...4 (позиционирование по верхней строке)
+	// x=0...13
+#ifdef DISPLAY_CHECK_ARGS
+	if (x > 13 || y > 4) {
+		return;
+	}
+#endif
+	lcd_GotoXY(x, y);
+	for (uint8_t i = 0; i < 14-x; i++) {
+		if (lcd_buf[i]) {
+			LcdChrBold(lcd_buf[i]);
+		}
+	}
+	clean_lcd_buf();
 }
 //
 /*-----Функция вывода строки с текущей позиции-----*/
-void LcdStr (unsigned char *data)
-{ while(*data) LcdChr(*(data++));
-  return;
+void LcdStr(unsigned char *data) {
+	while (*data) {
+		lcd_OutChar(*(data++));
+	}
 }
 //
 /*-----Функция вывода большой строки с текущей позиции-----*/
-void LcdStrBig (unsigned char *data)
-{ while(*data) LcdChrBig(*(data++));
-  return;
+void LcdStrBig (unsigned char *data) {
+	while (*data) {
+		LcdChrBig(*(data++));
+	}
 }
 //
 /*-----Функция вывода большой и жирной строки с текущей позиции-----*/
 void LcdStrBold (unsigned char *data)
 { while(*data) LcdChrBold(*(data++));
-  return;
 }
 //
 /*-----Функция вывода шкалы регулируемого параметра с высотой и координатами шрифта-----*/
-void LcdSkalaXYFont (unsigned char x, unsigned char y, unsigned char w, unsigned char persent)
-{ /*
+void LcdSkalaXYFont (uint8_t x, uint8_t y, uint8_t w, uint8_t persent) {
+/*
   x=0...13 (координата слева)
   y=0...5 (номер строки)
   w=1...13 (ширина по х в символах)
   persent=0...100
 */
-  unsigned char Xn=x*6;                  //Координата Xn=0...83 начала шкалы
-  unsigned char Xw=w*6;                  //Ширина шкалыв пикселях
-  unsigned char Xk=Xn+Xw;                //Координата Xk=0...83 конца шкалы
-  unsigned char Y1=y*8;                  //Координата Y1=0...47 верха шрифта
-  unsigned char Y2=Y1+8;                 //Координата Y1=0...47 низа шрифта
-  unsigned char i=Xn;                    //Счетчик пикселей по горизонтали
+	uint8_t Xn=x*6;                  //Координата Xn=0...83 начала шкалы
+	uint8_t Xw=w*6;                  //Ширина шкалыв пикселях
+	uint8_t Xk=Xn+Xw;                //Координата Xk=0...83 конца шкалы
+	uint8_t Y1=y*8;                  //Координата Y1=0...47 верха шрифта
+	uint8_t Y2=Y1+8;                 //Координата Y1=0...47 низа шрифта
+	uint8_t i=Xn;                    //Счетчик пикселей по горизонтали
 //Предварительная очистка выводимой области
-  while (i<=Xk)
-  { LcdLine (i, Y1, i, Y2, 0);           //Режим Blank
-    i++;
-  }
+	while (i <= Xk) {
+		LcdLine(i, Y1, i, Y2, PIXEL_OFF);           //Режим Blank
+    		i++;
+	}
 //Вывод шкалы
   i=Xn;
-  unsigned char Yp=Y1+3;                 //Координата y для вывода пикселя
+  uint8_t Yp=Y1+3;                 //Координата y для вывода пикселя
   Y1=Y1+1;                               //Верхняя координата линии шкалы
   Y2=Y1+4;                               //Нижняя координата линии шкалы
-  while (i<=Xk)
+  while (i <= Xk)
   { if ((i-Xn)*100/Xw<persent)           //Если вывод линий
-    { LcdLine (i, Y1, i, Y2, 1);
+    { LcdLine (i, Y1, i, Y2, PIXEL_ON);
     }
-    else LcdPixel (i, Yp, 1);            //Иначе - вывод точки
-    i=i+2;                               //Инкремент с шагом 2
+    else LcdPixel (i, Yp, PIXEL_ON);            //Иначе - вывод точки
+    i += 2;                               //Инкремент с шагом 2
   }
-  return;
 }
 //
 /*-----Функция копирования буфера в ОЗУ ЖКИ-----*/
-void LcdUpdate (void)
-{ unsigned int i;
-  unsigned char j;
-  LcdSend(0x80, LCD_CMD);                //x=0
-  LcdSend(0x40, LCD_CMD);                //y=0
-  if (china==1)                          //Если китайский дисплей - вывод пустой строки
-  { for (j=Cntr_X_RES; j>0; j--) LcdSend(0, LCD_DATA);
-  }
-  for (i=0; i<LCD_CACHSIZE; i++)         //Вывод данных
-  { LcdSend(LcdCache[i], LCD_DATA);
-    if (china==1)                        //Если китайский дисплей - вывод пустой строки
-    { if (++j==LCD_X_RES)
-      { for (j=(Cntr_X_RES-LCD_X_RES); j>0; j--) LcdSend(0, LCD_DATA);
-        j=0;
-      }
-    }
-  }
-  return;
+void LcdUpdate() {
+	LcdSend(0x80, LCD_CMD);                //x=0
+	LcdSend(0x40, LCD_CMD);                //y=0
+
+#if DISPLAY_CHINA
+	uint8_t j;
+	for (j = Cntr_X_RES; j > 0; j--)
+		LcdSend(0, LCD_DATA);
+#endif
+	for (uint16_t i = 0; i < LCD_CACHSIZE; i++) {         //Вывод данных
+		LcdSend(LcdCache[i], LCD_DATA);
+#if DISPLAY_CHINA
+		if (++j == LCD_X_RES) {
+			for (j = (Cntr_X_RES-LCD_X_RES); j>0; j--) {
+				LcdSend(0, LCD_DATA);
+			}
+			j=0;
+      	}
+#endif
+	}
 }
+
+
+
+// Вывод строки
+void lcd_OutStr(PGM_P str) {
+	for (;;) {
+		uint8_t c = pgm_read_byte_near(str++);
+		if (c == 0) {
+			break;
+		}
+		lcd_OutChar(c);
+	}
+}
+
+void lcd_OutStrXY(PGM_P str, uint8_t x, uint8_t y) {
+	lcd_GotoXY(x, y);
+	lcd_OutStr(str);
+}
+
+/**
+ * Управляющие коды:
+ * 	\n	      переход на следующую строку
+ * 	0 1 x y    переход к позиции
+ * 	0 0		 конец блока данных
+ */
+//void lcd_outData(PGM_P s) {			// вывод экрана данных
+//	for (;;) {
+//		uint8_t c = pgm_read_byte_near(str++);
+//		if (c == 0) {
+//			break;
+//		}
+//		LcdChr(c);
+//	}
+//}

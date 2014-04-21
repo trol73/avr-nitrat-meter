@@ -1,9 +1,18 @@
+void LcdAnim (void);                     //Функция вывода аннимации в виде заполняющейся шкалы процесса замера
+void lcd_OutInt(bool gash, unsigned int data, uint8_t l, uint8_t r);//Функция вывода (r+l)-значн.числа типа unsigned int с гаш.незнач.нуля с текущей позиции
+void lcd_OutIntBuf(bool gash, unsigned int data, uint8_t l, uint8_t r, bool act);//Функция вывода (r+l)-значн.числа типа unsigned int в буфер с гаш.незнач.нуля
+void LcdNadp_10 (unsigned char n);       //Функция вывода надписи из 10 символов из массива nadp_10 с текущей позиции
+void LcdNadp_8 (unsigned char n);        //Функция вывода надписи из 8 символов из массива nadp_8 с текущей позиции
+void LcdNadp_6 (unsigned char n);        //Функция вывода надписи из 6 символов из массива nadp_6 с текущей позиции
+void LcdNadp_4 (unsigned char n);        //Функция вывода надписи из 4 символов из массива nadp_4 с текущей позиции
+
+
 /*-----Функция вывода надписи из 10 символов из массива nadp_10 с текущей позиции----*/
 void LcdNadp_10 (unsigned char n)
 //n-номер строки в массиве
 { unsigned char i=0;                     //Счетчик символов надписи
   while (i<10)                           //Вывод строки посимвольно
-  { LcdChr(pgm_read_byte(&nadp_10[n][i]));
+  { lcd_OutChar(pgm_read_byte(&nadp_10[n][i]));
     i++;
   }
   return;
@@ -14,7 +23,7 @@ void LcdNadp_8 (unsigned char n)
 //n-номер строки в массиве
 { unsigned char i=0;                     //Счетчик символов надписи
   while (i<8)                            //Вывод строки посимвольно
-  { LcdChr(pgm_read_byte(&nadp_8[n][i]));
+  { lcd_OutChar(pgm_read_byte(&nadp_8[n][i]));
     i++;
   }
   return;
@@ -25,7 +34,7 @@ void LcdNadp_6 (unsigned char n)
 //n-номер строки в массиве
 { unsigned char i=0;                     //Счетчик символов надписи
   while (i<6)                            //Вывод строки посимвольно
-  { LcdChr(pgm_read_byte(&nadp_6[n][i]));
+  { lcd_OutChar(pgm_read_byte(&nadp_6[n][i]));
     i++;
   }
   return;
@@ -36,43 +45,44 @@ void LcdNadp_4 (unsigned char n)
 //n-номер строки в массиве
 { unsigned char i=0;                     //Счетчик символов надписи
   while (i<4)                            //Вывод строки посимвольно
-  { LcdChr(pgm_read_byte(&nadp_4[n][i]));
+  { lcd_OutChar(pgm_read_byte(&nadp_4[n][i]));
     i++;
   }
-  return;
 }
 //
 /*-----Функция вывода анимации в виде заполняющейся шкалы процесса замера-----*/
-void LcdAnim (void)
-{ unsigned char per=0;                   //Счетчик процентов заполнения
-//Стирание предыдущих надписей
-  LcdGotoXYFont(6, 1);                   //x=6, y=1
-  LcdStr("        ");                    //8 пробелов
-//Вывод анимации
-  while (per<100)
-  { LcdBar(42, 9, 83, 13, per);          //Рисование прогресс-бара и заполнения его на "процент"
-    per=per+3;
-    if (per>100) per=100;
-    LcdUpdate();                         //Вывод информации в дисплей
-  }
-  return;
+void LcdAnim() {
+	unsigned char per=0;                   //Счетчик процентов заполнения
+	//Стирание предыдущих надписей
+	lcd_GotoXY(6, 1);                   //x=6, y=1
+	LcdStr("        ");                    //8 пробелов
+	//Вывод анимации
+	for (uint8_t per = 0; per < 100; per += 2) {
+		LcdBar(42, 9, 83, 13, per);          //Рисование прогресс-бара и заполнения его на "процент"
+		LcdUpdate();                         //Вывод информации в дисплей
+	}
 }
 //
-/*-----Функция вывода (r+l)-значн.числа типа unsigned int с гаш.незнач.нуля с текущей позиции-----*/
-void LcdCifr (unsigned char gash, unsigned int data, unsigned char l, unsigned char r)
+/**
+ * Функция вывода (r+l)-значн.числа типа unsigned int с гаш.незнач.нуля с текущей позиции
+*/
+void lcd_OutInt(bool gash, unsigned int data, uint8_t l, uint8_t r) {
 /*gash=0 - нет гашения, 1 - гашение 1-го незнач.нуля слева,
   data - число; l - число выводимых цифр слева, r - справа от запятой)
 */
-{ LcdCifrBuf(gash, data, l, r, 0);
-  LcdString();                           //Вывод строки из текстового буфера с текущей позиции
-  return;
+	lcd_OutIntBuf(gash, data, l, r, 0);
+	LcdString();                           //Вывод строки из текстового буфера с текущей позиции
 }
-//
-/*-----Функция вывода (r+l)-значн.числа типа unsigned int в буфер с гаш.незнач.нуля -----*/
-void LcdCifrBuf (unsigned char gash, unsigned int data, unsigned char l, unsigned char r, unsigned char act)
-/*gash=0 - нет гашения, 1 - гашение 1-го незнач.нуля слева,
-  data - число; l - число выводимых цифр слева, r - справа от запятой)
-  act=0 - обычная индикация, act=1 - с миганием активного пункта
+
+/**
+ * Функция вывода (r+l)-значн.числа типа unsigned int в буфер с гаш.незнач.нуля
+ *
+	gash=0 - нет гашения, 1 - гашение 1-го незнач.нуля слева,
+	data - число; l - число выводимых цифр слева, r - справа от запятой)
+	act=false - обычная индикация, act=trus - с миганием активного пункта *
+ **/
+void lcd_OutIntBuf(bool gash, unsigned int data, uint8_t l, uint8_t r, bool act)
+/*
 */
 { unsigned int i=0;                      //Счетчик выводимых разрядов
   unsigned char c=1;                     //Счетчик разрядов текстового буфера
@@ -133,5 +143,4 @@ void LcdCifrBuf (unsigned char gash, unsigned int data, unsigned char l, unsigne
       c++;                               //Инкремент счетчика разрядов текстового буфера
     }
   }
-  return;
 }
