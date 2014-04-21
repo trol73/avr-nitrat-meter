@@ -164,7 +164,7 @@ const unsigned char PROGMEM skal_stat[]=
 /*---Инициализация глобальных переменных---*/
 unsigned char mas_name[6][8];            //Массив в ОЗУ пользовательских названий продуктов из 8 символов*/
 unsigned int ADCx10;                     //Переменная измеренного значения проводимости (в ADC*10)
-unsigned char korr_zam=0;                //Переменная корректности замера: 1-ОК, 0-ошибка
+bool meassureOk = false;                 //Переменная корректности замера: 1-ОК, 0-ошибка
 unsigned char akt=0;                     //1- признак активного текущего пункта меню
 unsigned char b=0;                       //Переменная для автоповтора нажатой кнопки
 unsigned char contrast=70;               //Контрастность дисплея: 0...100 (регулируется только у китайского дисплея)
@@ -221,12 +221,6 @@ unsigned char knopka (void);             //Определение нажатых кнопок
 void LoadEE(void);                       //Загрузка глобальных переменных из EEPROM
 void menu (void);                        //Функция вывода меню
 void menumess (unsigned char ms);        //Функция вывода меню сообщений
-void menu_zar (void);                    //Функция вывода меню зарядки
-void menu_nach (void);                   //Функция вывода начального меню
-void menu_prod (void);                   //Функция вывода меню выбора продукта
-void menu_izm (void);                    //Функция вывода меню измерения
-void menu_nastr (void);                  //Функция вывода меню настроек
-void menu_PDK (void);                    //Функция вывода меню норм ПДК
 void off_power (void);                   //Процедура выключения питания
 void opros(void);                        //Опрос кнопок
 void ozhid (unsigned char kn);           //Ожидание отпускания кнопки

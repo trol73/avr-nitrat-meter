@@ -1,4 +1,9 @@
-#define CHAR_ARROW_RIGHT_FILLED			166                         //Символ закрашенного треугольника вправо |>
+#define CHAR_ARROW_DOWN_EMPTY			161							// Символ пустого треугольника вниз V
+#define CHAR_ARROW_UP_EMPTY				163							// Символ пустого треугольника вверх ^
+#define CHAR_ARROW_RIGHT_EMPTY			165							// Символ пустого треугольника вправо |>
+#define CHAR_ARROW_RIGHT_FILLED			166                         // Символ закрашенного треугольника вправо |>
+#define CHAR_ARROW_LEFT_EMPTY			167                         // Символ пустого треугольника влево <|
+
 
 // Массив надписей меню ПДК из 12 символов
 const unsigned char PROGMEM nadp_mPDK[31][12]= {
@@ -38,9 +43,11 @@ const unsigned char PROGMEM nadp_mPDK[31][12]= {
 const uint8_t PROGMEM STR_MAIN_MENU_MEASSURE[] = "Измерение  \xA5";
 const uint8_t PROGMEM STR_MAIN_MENU_SETTINGS[] = "Настройки  \xA5";
 const uint8_t PROGMEM STR_MAIN_MENU_LIMITS[] = "Нормы ПДК  \xA5";
+const uint8_t PROGMEM STR_PRODUCT_TITLE[] = " ПРОДУКТ:";
 
-const uint8_t PROGMEM STR_UAKK_V[] = "Uакк,В";
-const uint8_t PROGMEM STR__V[] = " В";
+const uint8_t PROGMEM STR_UAKK_V[] = "Uакк,В ";
+const uint8_t PROGMEM STR___[] = "  ";
+//const uint8_t PROGMEM STR__V[] = " В";
 
 
 // Массив надписей из 10 символов
@@ -48,7 +55,7 @@ const unsigned char PROGMEM nadp_10[15][10]= {
 	"Измерение ",                          //0	!!
 	"Настройки ",                          //1	!!
 	"Нормы ПДК ",                          //2	!!
-	" ПРОДУКТ: ",                          //3
+	" ПРОДУКТ: ",                          //3	!!
 	" НАСТРОЙКИ",                          //4
 	"КАЛИБРОВКА",                          //5
 	"          ",                          //6
