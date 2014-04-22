@@ -179,7 +179,18 @@ unsigned char menu_cnt=0;                //Счетчик меню: 0-нач.,1-выбор продукта
 unsigned char mnc_nach=0;                //Счетчик начального меню: 0-Измерение, 1-Настройки, 2-Нормы ПДК
 unsigned char n_nazv=0;                  //Счетчик букв при редактировании названия продукта
 unsigned char n_prod=0;                  //Счетчик номера проверяемых продуктов: 0...35
-unsigned char mnc_izm=0;                 //Счетчик меню измерений: 0-замер,1-сохранить,2-статистика,3-очистка статист.,4-ред.назв
+
+#define MEASSURE_SCREEN_MEASSURE	0		// замер
+#define MEASSURE_SCREEN_SAVE		1		// сохранить
+#define MEASSURE_SCREEN_STATISTIC	2		// статистика
+#define MEASSURE_SCREEN_CLEAR		3		// очистка статистики
+#define MEASSURE_SCREEN_EDIT_NAME	4		// Edit name
+/**
+ * Meassure subscreen
+ *
+ * MEASSURE_SCREEN_xxx
+ */
+uint8_t meassureScreen = MEASSURE_SCREEN_MEASSURE;
 unsigned char mnc_nastr=0;               //Счетчик меню настроек: 0-время подсв.,1-яркость,2-таймер,3-звук,4-контрастность,5-Uакк,6-Rx
 unsigned char mnc_PDK=0;                 //Счетчик меню норм ПДК проверяемых продуктов: 0...30
 unsigned char sdvig_prod=0;              //Сдвиг отбражаемых пунктов меню проверяемых продуктов: 0...31
@@ -193,7 +204,16 @@ volatile unsigned char T_bat=1;          //1 - признак прошедшего интервала 0,26
 volatile unsigned char t_026sec=0;       //Счетчик 0,26-секундных интервалов
 volatile unsigned char T_menu=1;         //1 - признак прошедшего интервала 0,26 сек для вывода меню
 volatile unsigned char zar=0;            //Режим зарядки 0-ЗУ не подключено; 1-зарядка; 2-зарядка завершена
-unsigned char zam=0;                     //0-не было ни одного замера, 1-был замер, но не сохранен, 2-был замер и сохранен, 3-непрерывное измерение
+
+
+#define MEASSURE_STATUS_NONE		0		// не было ни одного замера
+#define MEASSURE_STATUS_NOT_SAVED	1		// был замер, но не сохранен
+#define MEASSURE_STATUS_SAVED		2		// был замер и сохранен
+#define MEASSURE_STATUS_CONTINUOUS	3		// непрерывное измерение
+/**
+ * Статус измерения MEASSURE_STATUS_xxx
+ */
+uint8_t meassureStatus = MEASSURE_STATUS_NONE;
 //
 /*---Инициализация переменных в EEPROM---*/
 unsigned char EEMEM Econtrast=70;        //Контрастность дисплея: 0...100
@@ -757,9 +777,9 @@ void LoadEE(void)
   if (menu_cnt>4) menu_cnt=0;            //По умолчанию - нач.меню
   n_prod=eeprom_read_byte(&En_prod);     //Счетчик проверяемых продуктов: 0...35
   if (n_prod>35) n_prod=0;               //По умолчанию - №0
-  mnc_izm=eeprom_read_byte(&Emnc_izm);   //Счетчик меню измерений: 0-замер,1-сохранить,2-статистика,3-очистка статист.,4-ред.назв
-  if ((mnc_izm>4)||(mnc_izm==1)) mnc_izm=0;//По умолчанию - замер, сохранять ещё нечего
-  if ((n_prod<30)&&(mnc_izm==4)) mnc_izm=3;//Если название проверяем.продукта из flash и пункт Ред.назв.->Очистка статист.
+  meassureScreen=eeprom_read_byte(&Emnc_izm);   //Счетчик меню измерений: 0-замер,1-сохранить,2-статистика,3-очистка статист.,4-ред.назв
+  if ((meassureScreen>4)||(meassureScreen==1)) meassureScreen=0;//По умолчанию - замер, сохранять ещё нечего
+  if ((n_prod<30)&&(meassureScreen==4)) meassureScreen=3;//Если название проверяем.продукта из flash и пункт Ред.назв.->Очистка статист.
   mnc_nastr=eeprom_read_byte(&Emnc_nastr);//Счетчик меню настроек: 0-время подсв.,1-яркость,2-таймер,3-звук,4-Uакк,5-Rx
   if (mnc_nastr>6) mnc_nastr=0;          //По умолчанию - 0 (время подсв.)
   mnc_PDK=eeprom_read_byte(&Emnc_PDK);   //Счетчик меню норм ПДК проверяемых продуктов: 0...30
@@ -802,7 +822,7 @@ void SaveEE (void)
   if (eeprom_read_byte(&Emenu_cnt)!=menu_cnt) eeprom_write_byte(&Emenu_cnt, menu_cnt);//Счетчик меню
   if (eeprom_read_byte(&Emnc_nach)!=mnc_nach) eeprom_write_byte(&Emnc_nach, mnc_nach);//Счетчик начального меню
   if (eeprom_read_byte(&En_prod)!=n_prod) eeprom_write_byte(&En_prod, n_prod);//Счетчик проверяемых продуктов
-  if (eeprom_read_byte(&Emnc_izm)!=mnc_izm) eeprom_write_byte(&Emnc_izm, mnc_izm);//Счетчик меню измерений
+  if (eeprom_read_byte(&Emnc_izm)!=meassureScreen) eeprom_write_byte(&Emnc_izm, meassureScreen);//Счетчик меню измерений
   if (eeprom_read_byte(&Emnc_nastr)!=mnc_nastr) eeprom_write_byte(&Emnc_nastr, mnc_nastr);//Счетчик меню настроек
   if (eeprom_read_byte(&Emnc_PDK)!=mnc_PDK) eeprom_write_byte(&Emnc_PDK, mnc_PDK);//Счетчик меню норм ПДК проверяемых продуктов
   if (eeprom_read_byte(&Esdvig_prod)!=sdvig_prod) eeprom_write_byte(&Esdvig_prod, sdvig_prod);//Сдвиг отбражаемых пунктов меню проверяемых продуктов

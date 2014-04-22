@@ -1,5 +1,6 @@
 #define CHAR_ARROW_DOWN_EMPTY			161							// Символ пустого треугольника вниз V
 #define CHAR_ARROW_UP_EMPTY				163							// Символ пустого треугольника вверх ^
+#define CHAR_ARROWS_UP_DOWN				164							// Символ двух закрашенных треугольников вверх+вниз
 #define CHAR_ARROW_RIGHT_EMPTY			165							// Символ пустого треугольника вправо |>
 #define CHAR_ARROW_RIGHT_FILLED			166                         // Символ закрашенного треугольника вправо |>
 #define CHAR_ARROW_LEFT_EMPTY			167                         // Символ пустого треугольника влево <|
@@ -48,6 +49,15 @@ const uint8_t PROGMEM STR_PRODUCT_TITLE[] = " ПРОДУКТ:";
 const uint8_t PROGMEM STR_UAKK_V[] = "Uакк,В ";
 const uint8_t PROGMEM STR___[] = "  ";
 //const uint8_t PROGMEM STR__V[] = " В";
+const uint8_t PROGMEM STR_SAVE[] = "Сохранить";
+const uint8_t PROGMEM STR_SAVED[] = "Сохранено";
+
+const uint8_t PROGMEM STR_MAX[] = "Макс.";
+const uint8_t PROGMEM STR_MIN[] = "Мин.";
+const uint8_t PROGMEM STR_MEASSURES_CNT[] = "Замеров";
+const uint8_t PROGMEM STR_MEASSURES[] = "Замер";
+const uint8_t PROGMEM STR_MICRO_SM_BRACKET[] = "(мкСм)";
+const uint8_t PROGMEM STR_MICRO_SM[] = "мкСм";
 
 
 // Массив надписей из 10 символов
@@ -58,9 +68,9 @@ const unsigned char PROGMEM nadp_10[15][10]= {
 	" ПРОДУКТ: ",                          //3	!!
 	" НАСТРОЙКИ",                          //4
 	"КАЛИБРОВКА",                          //5
-	"          ",                          //6
-	"Сохранить ",                          //7
-	"Сохранено ",                          //8
+	"          ",                          //6	!!
+	"Сохранить ",                          //7	!!
+	"Сохранено ",                          //8	!!
 	"Очистить  ",                          //9
 	"статистику",                          //10
 	"Ред.назван",                          //11
@@ -88,21 +98,21 @@ const unsigned char PROGMEM nadp_8[8][8]= {
 	"Таймер  ",                            //2
 	"Звук    ",                            //3
 	"Контраст",                            //4
-	"Замеров ",                            //5
+	"Замеров ",                            //5	!!!
 	"Gx,мкСм ",                            //6
 	"Нормы ПД",                            //7
 };
 
 // Массив надписей из 6 символовs
 const unsigned char PROGMEM nadp_6[8][6]= {
-	"Замер ",                              //0
-	"Макс. ",                              //1
+	"Замер ",                              //0	!!!
+	"Макс. ",                              //1	!!!
 	"Мин.  ",                              //2
 	"Uакк. ",                              //3
 	"Uакк,В",                              //4	!!!
 	"Rx,Ом ",                              //5
-	"(мкСм)",                              //6
-	" мкСм ",                              //7
+	"(мкСм)",                              //6	!!!
+	" мкСм ",                              //7	!!!
 };
 
 // Массив надписей из 4 символов

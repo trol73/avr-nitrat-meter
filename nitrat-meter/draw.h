@@ -1,4 +1,4 @@
-void menu_zar (void);                    //Функция вывода меню зарядки
+void menu_charge (void);                    //Функция вывода меню зарядки
 void menu_main (void);                   //Функция вывода начального меню
 void menu_product (void);                   //Функция вывода меню выбора продукта
 void menu_izm (void);                    //Функция вывода меню измерения
@@ -15,7 +15,7 @@ void menu() {
 	clean_cache();                         //Очистка КЭШ-буфера в ОЗУ МК
 	
 	if (rezh == 0 && zar > 0) {               //Если режим выключения работы и зарядки - индикация процесса зарядки
-		menu_zar();                          //Вывод меню процесса зарядки
+		menu_charge();                          //Вывод меню процесса зарядки
 	} else {
 		switch (menu_cnt) {
 			case 0:
@@ -93,21 +93,21 @@ void menu_product() {
 void menu_izm() {
 	unsigned char i=0;                     //Счетчик символов
 	unsigned char max=0;                   //Максимум для вывода статистики
-	unsigned char d=0;                     //Промежуточные данные
+	uint8_t d = 0;                     //Промежуточные данные
 	unsigned int Gmax;                     //Максимальное значение проводимости в мкСм*10
 	unsigned int Gmin;                     //Минимальное значение проводимости в мкСм*10
 	unsigned int dat;                      //Промежуточные даные для вычислений
 	unsigned long datl;                    //Промежуточные даные для вычислений
 
 	uint16_t  Gx = clk_Gx10(ADCx10);                   //Вычисление измеренной проводимости в мкСм*10
-	meassureOk = Gx < 65535;
+	meassureOk = Gx != 0xFFFF;
 
 	Gmax = clk_Gx10(eeprom_read_word(&mas_lim[0][n_prod]));//Вычисление максимального значения проводимости в мкСм*10
 	Gmin = clk_Gx10(eeprom_read_word(&mas_lim[1][n_prod]));//Вычисление минимального значения проводимости в мкСм*10
 	//Вывод стрелки-указателя влево
 	lcd_OutCharXY(CHAR_ARROW_LEFT_EMPTY, 0, 0);
 	//Вывод строки названия проверяемого продукта
-	if (mnc_izm != 4 || akt != 1) {           //Если не пункт редактир.названия
+	if (meassureScreen != MEASSURE_SCREEN_EDIT_NAME || akt != 1) {
 		while (i < 8) {                          //Вывод строки из 8 символов
 			if (n_prod < 30) {                    //Если названия неизменные - из flash
 				lcd_OutChar(pgm_read_byte(&nadp_mPDK[n_prod][i]));
@@ -118,7 +118,7 @@ void menu_izm() {
 		}
 	}
 	//Вывод %
-	if ( mnc_izm < 3 &&  zam > 0) {             //Если был замер и пункты меню 0(замер),1(сохр.) или 2(статистика)
+	if ( meassureScreen < 3 &&  meassureStatus != MEASSURE_STATUS_NONE) {             //Если был замер и пункты меню 0(замер),1(сохр.) или 2(статистика)
 		if ( Gmax != Gmin) {                     //Если Gmax=Gmin - проценты не выводятся
 			if (Gx >= Gmin) {                     //Если % положительные
 				datl = Gx;
@@ -146,19 +146,18 @@ void menu_izm() {
 /*Счетчик пунктов меню измерений mnc_izm:
   0-замер,1-сохранить,2-статистика,3-очистка статист.,4-ред.назв
 */
-	if (mnc_izm < 2) {                         //Если замер или сохранение
+	if (meassureScreen < MEASSURE_SCREEN_STATISTIC) {                         //Если замер или сохранение
 		//Вывод надписей первой строки меню
-		if (mnc_izm == 0) {
-			d = 166;               //Если пункт запуска замера - символ закрашенного треугольника вправо |>
+		if (meassureScreen == MEASSURE_SCREEN_MEASSURE) {
+			lcd_OutCharXY(CHAR_ARROW_RIGHT_FILLED, 0, 1);
 		} else {
-			d = ' ';                          //Иначе - пробел
+			lcd_GotoXY(0, 2);
 		}
-		lcd_OutCharXY(d, 0, 1);                   //Вывод символа в позицию x=0, y=1
-		LcdNadp_6(0);                        //Вывод надписи "Замер "
-		if (zam == 0) {
-			LcdNadp_6(6);            //Если еще не было ни одного замера - вывод надписи "(мкСм)"
+		lcd_OutStr(STR_MEASSURES);
+		if (meassureStatus == MEASSURE_STATUS_NONE) {
+			lcd_OutStr(STR_MICRO_SM_BRACKET);	// Если еще не было ни одного замера - вывод надписи "(мкСм)"
 		} else {                                //Иначе - вывод проводимости в мкСм
-			if (Gx == 65535) {
+			if (!meassureOk) {
 				sprintf(lcd_buf, "????.?");//Если признак переполнения - копирование строки в буфер
 			} else {
 				lcd_OutIntBuf(3, Gx, 4, 1, 0);   //Иначе - вывод в буфер проводимости в мкСм
@@ -168,100 +167,119 @@ void menu_izm() {
 		lcd_OutChar(CHAR_ARROW_RIGHT_EMPTY);                         //Символ пустого треугольника вправо |>
 		//Вывод надписей второй строки меню
 		//Если пункт сохранения замера и замер ещё не сохранен - символ закрашенного треугольника вправо |>
-		d = (mnc_izm == 1 && (zam % 3==1)) ? CHAR_ARROW_RIGHT_FILLED : ' ';
-		lcd_OutCharXY(d, 0, 2);
-		d = Gx == 65535 ? 0 : zam % 3;
-		//Если проводимость не известна - пункт Сохранить не выводится
-		// Иначе - "Сохранить " или "Сохранено "
-		LcdNadp_10(6+d);                     //Вывод надписей: "          ", "Сохранить ", "Сохранено "
-		if (d == 1) {	// Если замер ещё не сохранен
-			lcd_OutCharXY(CHAR_ARROW_RIGHT_EMPTY, 13, 2);      //Если замер ещё не сохранен - символ пустого треугольника вправо |>
+		if (meassureStatus == MEASSURE_STATUS_NOT_SAVED) {
+			lcd_OutCharXY(MEASSURE_STATUS_NOT_SAVED, 0, 2);
 		}
+		if (meassureOk) {
+			switch(meassureStatus) {
+				case MEASSURE_STATUS_NOT_SAVED:
+					lcd_OutStr(STR_SAVE);
+					lcd_OutCharXY(CHAR_ARROW_RIGHT_EMPTY, 13, 2);      //Если замер ещё не сохранен - символ пустого треугольника вправо |>
+					break;
+				case MEASSURE_STATUS_SAVED:
+					lcd_OutStr(STR_SAVED);
+					break;
+			}
+		}
+
 		//Вывод надписей третьей строки меню
-		lcd_GotoXY(1, 3);                 //x=1, y=3
-		LcdNadp_6(1);                        //Вывод надписи "Макс. "
-		if (Gmax == 65535) {
+		lcd_OutStrXY(STR_MAX, 1, 3);
+		if (!meassureOk) {
 			LcdStr("????.?");
 		} else {
 			lcd_OutInt(3, Gmax, 4, 1);         //Вывод Gmax в мкСм
 		}
 		//Вывод надписей четвертой строки меню
-		lcd_GotoXY(1, 4);                 //x=1, y=4
-		LcdNadp_6(2);                        //Вывод надписи "Мин.  "
-		if (Gmin == 65535) {
+		lcd_OutStrXY(STR_MIN, 1, 4);
+		if (!meassureOk) {
 			LcdStr("????.?");
 		} else {
 			lcd_OutInt(3, Gmin, 4, 1);         //Вывод Gmin в мкСм
 		}
 		//Вывод надписей пятой строки меню
-		lcd_GotoXY(1, 5);                 //x=1, y=5
-		LcdNadp_8(5);                        //Вывод надписи "Замеров "
+		lcd_OutStrXY(STR_MEASSURES_CNT, 1, 5);
 		lcd_GotoXY(8, 5);                 //x=8, y=5
 		lcd_OutInt(4, eeprom_read_word(mas_Nzam+n_prod), 5, 0);//Вывод числа выполненных замеров для выбранного продукта
-		lcd_OutChar(161);                         //Символ пустого треугольника вниз V
+		lcd_OutChar(CHAR_ARROW_DOWN_EMPTY);
 	} else {
-		if (mnc_izm==2) {                      //Иначе, если вывод статистики
+		if (meassureScreen == MEASSURE_SCREEN_STATISTIC) {
     //Вывод текущего измеренного значения в мкСм
-      if (zam!=0)                        //Если был замер
-      { if (Gx==65535) sprintf(lcd_buf, "????.?");//Если признак переполнения - копирование строки в буфер
-        else lcd_OutIntBuf(3, Gx, 4, 1, 0); //Вывод проводимости в мкСм
-        LcdStringXY(1, 1);
-        LcdNadp_6(7);                    //" мкСм "
+      if (meassureStatus != MEASSURE_STATUS_NONE) {                       //Если был замер
+    	  if (Gx == 0xffff) {
+    		  sprintf(lcd_buf, "????.?");//Если признак переполнения - копирование строки в буфер
+    	  } else {
+    		  lcd_OutIntBuf(3, Gx, 4, 1, 0); //Вывод проводимости в мкСм
+    	  }
+    	  LcdStringXY(1, 1);
+    	  lcd_OutStr(STR_MICRO_SM);
       }
-    //Вывод стрелок прокрутки
-      lcd_OutCharXY(1, 163, 13);              //Символ пустого треугольника вверх ^
-      lcd_GotoXY(13, 3);              //x=13, y=4
-      lcd_OutChar(161);                       //Символ пустого треугольника вниз V
-    //Вывод шкалы из массива skal_stat[]
-      lcd_GotoXY(0, 5);               //x=0, y=5
-      i=0;
-      while (i<84)                       //Вывод в кэш-буфер ОЗУ байта в цикле
-      { LcdCache[LcdCacheIdx++]=pgm_read_byte(skal_stat+i);
-        i++;
+      // Вывод стрелок прокрутки
+      lcd_OutCharXY(CHAR_ARROW_UP_EMPTY, 13, 1);
+      lcd_OutCharXY(CHAR_ARROW_DOWN_EMPTY, 13, 3);
+      // Вывод шкалы из массива skal_stat[]
+      lcd_GotoXY(0, 5);
+      //Вывод в кэш-буфер ОЗУ байта в цикле
+      for (i = 0; i < 84; i++) {
+    	  LcdCache[LcdCacheIdx++] = pgm_read_byte(skal_stat+i);
       }
-  //Вывод статистического графика
-    //Нахождение максимального значения в ячейках с числом замеров для отображаемого продукта
-      i=0;
-      max=0;
-      while (i<20)                       //Перебор 20 ячеек массива mas_stat[][] в EEPROM
-      { d=eeprom_read_byte(&mas_stat[n_prod][i]);//Считывание значения из EEPROM
-        if (d>max) max=d;
-        i++;
+      // Вывод статистического графика
+      // Нахождение максимального значения в ячейках с числом замеров для отображаемого продукта
+      max = 0;
+      for (i = 0; i < 20; i++) {
+    	  d = eeprom_read_byte(&mas_stat[n_prod][i]);//Считывание значения из EEPROM
+    	  if (d > max) {
+    		  max = d;
+    	  }
       }
-    //Вывод статистики
-      if (max>0)                         //Если найден хотя бы один замер
-      { i=0;
-        while (i<20)                     //Перебор 20 ячеек массива mas_stat[][] в EEPROM
-        { dat=(22*eeprom_read_byte(&mas_stat[n_prod][i]))/max;//Максимальная высота - 22 пикселя
-          d=dat;
-          if (d>0) LcdRect(12+i*3, 38, d, 3, 1);//Рисование закрашенного прямоугольника (низ: y=38)
-          i++;
-        }
+      // Вывод статистики
+      if (max > 0) {                         //Если найден хотя бы один замер
+    	  for (i = 0; i < 20; i++) {
+    		  dat = (22*eeprom_read_byte(&mas_stat[n_prod][i]))/max;//Максимальная высота - 22 пикселя
+    		  d = dat;
+    		  if (d > 0) {
+    			  LcdRect(12+i*3, 38, d, 3, 1);	//Рисование закрашенного прямоугольника (низ: y=38)
+    		  }
+    	  }
       }
-    //Вывод местоположения текущего замера в виде указателя-стрелки под шкалой
-      if ((zam>0)&&(Gmax!=Gmin))         //Если был замер и имеются Gmax и Gmin
-      { if (Gx>=Gmin)                    //Если вывод правее минимума
-        { datl=Gx;                       //Изменение типа переменной на unsigned long
-          if (Gx==Gmax) dat=71;
-          else dat=(datl-Gmin)*60/(Gmax-Gmin)+12;//x=12...71, 60 ячеек
-          if (dat>83) d=83;              //Ограничение при зашкаливании
-          else d=dat;
-        }
-        else                             //Иначе - вывод левее минимума
-        { datl=Gmin;                     //Изменение типа переменной на unsigned long
-          dat=(datl-Gx)*59/(Gmax-Gmin);
-          if (dat>12) d=0;
-          else d=12-dat;
-        }
-        LcdLine(d, 45, d, 47, PIXEL_XOR);          //Вывод центральной вертикальной линии
-        if (d>0) LcdLine(d-1, 46, d-1, 47, PIXEL_XOR);//Вывод левой боковой короткой вертикальной линии
-        if (d>1) LcdPixel(d-2, 47, PIXEL_XOR);     //Вывод пикселя слева
-        if (d<83) LcdLine(d+1, 46, d+1, 47, PIXEL_XOR);//Вывод левой боковой короткой вертикальной линии
-        if (d<82) LcdPixel(d+2, 47, PIXEL_XOR);    //Вывод пикселя слева
+      //Вывод местоположения текущего замера в виде указателя-стрелки под шкалой
+      if (meassureStatus != MEASSURE_STATUS_NONE && Gmax != Gmin) {         //Если был замер и имеются Gmax и Gmin
+    	  if (Gx >= Gmin) {                    //Если вывод правее минимума
+    		  datl = Gx;                       //Изменение типа переменной на unsigned long
+    		  if (Gx == Gmax) {
+    			  dat = 71;
+    		  } else {
+    			  dat = (datl-Gmin)*60 / (Gmax-Gmin) + 12;	//x=12...71, 60 ячеек
+    		  }
+    		  if (dat > 83) {
+    			  d = 83;              //Ограничение при зашкаливании
+    		  } else {
+    			  d = dat;
+    		  }
+    	  } else {                            //Иначе - вывод левее минимума
+    		  datl = Gmin;                     //Изменение типа переменной на unsigned long
+    		  dat = (datl - Gx)*59/(Gmax-Gmin);
+    		  if (dat > 12) {
+    			  d = 0;
+    		  } else {
+    			  d = 12 - dat;
+    		  }
+    	  }
+    	  LcdLine(d, 45, d, 47, PIXEL_XOR);          //Вывод центральной вертикальной линии
+    	  if (d > 0) {
+    		  LcdLine(d-1, 46, d-1, 47, PIXEL_XOR);	//Вывод левой боковой короткой вертикальной линии
+    	  }
+    	  if (d > 1) {
+    		  LcdPixel(d-2, 47, PIXEL_XOR);     //Вывод пикселя слева
+    	  }
+    	  if (d < 83) {
+    		  LcdLine(d+1, 46, d+1, 47, PIXEL_XOR);//Вывод левой боковой короткой вертикальной линии
+    	  }
+    	  if (d < 82) {
+    		  LcdPixel(d+2, 47, PIXEL_XOR);    //Вывод пикселя слева
+    	  }
       }
-    }
-    else                                 //Иначе, если пункты "Очистить статистику" или "Ред.назван"
-    {//Затирание %
+		} else {                                //Иначе, если пункты "Очистить статистику" или "Ред.назван"
+			//Затирание %
       lcd_GotoXY(9, 0);               //x=9, y=0
       LcdStr("    ");                    //4 пробела
       if (akt==0)                        //Если не активные пункты
@@ -276,28 +294,28 @@ void menu_izm() {
         }
         if (d==5) lcd_OutChar('.');           //Вывод точки после "Ред.назван"
       //Вывод курсора слева
-        lcd_OutCharXY(0, (mnc_izm-2)*2, 166); //Символ закрашенного треугольника вправо |>
+        lcd_OutCharXY(CHAR_ARROW_RIGHT_FILLED, 0, (meassureScreen-2)*2); //Символ закрашенного треугольника вправо |>
       //Вывод стрелок-указателей справа
-        lcd_OutCharXY(13, 1, 163);            //Символ пустого треугольника вверх ^
-        lcd_OutCharXY(13, 3, 165);            //Символ пустого треугольника вправо |>
-        if (d==5) lcd_OutCharXY(13, 4, 165);  //Если название продукта из EEPROM - символ пустого треугольника вправо |>
+        lcd_OutCharXY(CHAR_ARROW_UP_EMPTY, 13, 1);            //Символ пустого треугольника вверх ^
+        lcd_OutCharXY(CHAR_ARROW_RIGHT_EMPTY, 13, 3);            //Символ пустого треугольника вправо |>
+        if (d==5) lcd_OutCharXY(CHAR_ARROW_RIGHT_EMPTY, 13, 4);  //Если название продукта из EEPROM - символ пустого треугольника вправо |>
       }
       else                               //Иначе, если активен какой-либо из пунктов "Очистить статистику" или "Ред.назван"
-      { if (mnc_izm==3)                  //Иначе, если подтверждение очистки статистики
+      { if (meassureScreen==3)                  //Иначе, если подтверждение очистки статистики
         {//Вывод надписей
           lcd_GotoXY(3, 2);           //x=3, y=2
           LcdNadp_10(12);                //"Очистить? "
-          lcd_OutCharXY(0, 4, 163);           //Символ пустого треугольника вверх ^
+          lcd_OutCharXY(CHAR_ARROW_UP_EMPTY, 0, 4);           //Символ пустого треугольника вверх ^
           lcd_OutChar(' ');                   //Пробел
           LcdNadp_10(13);                //"Да     Нет"
           lcd_OutChar(' ');                   //Пробел
-          lcd_OutChar(165);                   //Символ пустого треугольника вправо |>
+          lcd_OutChar(CHAR_ARROW_RIGHT_EMPTY);                   //Символ пустого треугольника вправо |>
           d=167;                         //Символ пустого треугольника влево <| в позиции x=0, y=0
         }
         else                             //Иначе, если редактирование названия продукта в EEPROM
         { d=' ';                         //Символ пробела в позиции x=0, y=0
-          if (n_nazv==0) d=167;          //Если первая редактируемая буква - символ пустой треугольник влево <| в позиции x=0, y=0
-          else lcd_OutCharXY(1, 2, 167);      //Иначе - вывод пустого треугольника влево <| в позиции x=1, y=2
+          if (n_nazv==0) d=CHAR_ARROW_LEFT_EMPTY;          //Если первая редактируемая буква - символ пустой треугольник влево <| в позиции x=0, y=0
+          else lcd_OutCharXY(CHAR_ARROW_LEFT_EMPTY, 1, 2);      //Иначе - вывод пустого треугольника влево <| в позиции x=1, y=2
         //Вывод надписей
           lcd_GotoXY(1, 0);           //x=1, y=0
           lcd_OutChar(' ');                   //Пробел
@@ -311,12 +329,12 @@ void menu_izm() {
           }
           if (n_nazv<7)                  //Если не последняя редактируемая буква
           { lcd_OutChar(' ');                 //Пробел
-            lcd_OutChar(165);                 //Символ пустого треугольника вправо |>
+            lcd_OutChar(CHAR_ARROW_RIGHT_EMPTY);                 //Символ пустого треугольника вправо |>
           }
         //Вывод курсора под редактируемой буквой
-          lcd_OutCharXY(3+n_nazv, 3, 164);    //Символ двух закрашенных треугольников вверх+вниз
+          lcd_OutCharXY(CHAR_ARROWS_UP_DOWN, 3+n_nazv, 3);    //Символ двух закрашенных треугольников вверх+вниз
         }
-        lcd_OutCharXY(0, 0, d);               //Вывод символа в позиции x=0, y=0
+        lcd_OutCharXY(d, 0, 0);               //Вывод символа в позиции x=0, y=0
       }
     }
   }
@@ -368,8 +386,8 @@ void menu_nastr () {
 				if (m==mnc_nastr) dat=164;       //Если строка активного пункта - символ двух закрашенных треугольников вверх+вниз
         			else dat=32;                     //Иначе - символ пробела
       		} else
-      			dat=165;                      //Иначе - символ пустого треугольника вправо |>
-      		lcd_OutCharXY(13,m+1,dat);                       //Вывод символа
+      			dat=CHAR_ARROW_RIGHT_EMPTY;                      //Иначе - символ пустого треугольника вправо |>
+      		lcd_OutCharXY(dat, 13,m+1);                       //Вывод символа
       		m++;
 		}
 	}
@@ -400,7 +418,7 @@ void menu_nastr () {
     LcdNadp_6(5);                        //Вывод надписи "Rx,Ом "
     lcd_OutChar(' ');                         //Вывод пробела
     r=clk_Rx(ADCx10);                    //Вычисление Rx
-    if (r==65535) sprintf(lcd_buf, "?????");//Если признак переполнения - копирование строки в буфер
+    if (r==0xffff) sprintf(lcd_buf, "?????");//Если признак переполнения - копирование строки в буфер
     else lcd_OutIntBuf(2, r, 5, 0, 0);      //Иначе - вывод сопротивления в Омах
     LcdStringXY(8, 3);
     if (akt==1)                          //Если активен пункт меню настроек
@@ -413,7 +431,7 @@ void menu_nastr () {
     lcd_GotoXY(0, 5);                 //x=0, y=4
     LcdNadp_8(6);                        //Вывод надписи "Gx,мкСм "
     r=clk_Gx10(ADCx10);                  //Вычисление Gx
-    if (r==65535) sprintf(lcd_buf, "????.?");//Если признак переполнения - копирование строки в буфер
+    if (r==0xffff) sprintf(lcd_buf, "????.?");//Если признак переполнения - копирование строки в буфер
     else lcd_OutIntBuf(3, r, 4, 1, 0);      //Иначе - вывод проводимости в мкСм
     LcdStringXY(8, 5);
   }
@@ -427,11 +445,11 @@ void menu_nastr () {
 /*----Функция вывода меню норм ПДК----*/
 void menu_PDK() {
 	//Вывод верхнего заголовка "Нормы ПДК,мг"
-	lcd_OutCharXY(0, 0, 167);                   //Символ пустого треугольника влево <|, x=0, y=0
+	lcd_OutCharXY(CHAR_ARROW_LEFT_EMPTY, 0, 0);                   //Символ пустого треугольника влево <|, x=0, y=0
 	LcdNadp_8(7);                          //Вывод надписи "Нормы ПД"
 	LcdNadp_4(12);                         //Вывод надписи "К,мг"
 	//Вывод курсора
-	lcd_OutCharXY(0, 1+mnc_PDK-sdvig_PDK, 166); //x=0, y=1...5, cимвол закрашенного треугольника вправо |>
+	lcd_OutCharXY(CHAR_ARROW_RIGHT_FILLED, 0, 1+mnc_PDK-sdvig_PDK); //x=0, y=1...5, cимвол закрашенного треугольника вправо |>
 	//Вывод 5 строк надписей меню из массива nadp_mPDK[31][12]
 	for (uint8_t m = 0; m < 5; m++) {
 		lcd_GotoXY(1, m+1);               //Установка координат для вывода первого символа строки
@@ -441,15 +459,15 @@ void menu_PDK() {
 	}
 	//Вывод стрелок вверх-вниз в последней колонке дисплея
 	if (sdvig_PDK > 0) {
-		lcd_OutCharXY(13, 1, 163); //Символ пустого треугольника вверх ^
+		lcd_OutCharXY(CHAR_ARROW_UP_EMPTY, 13, 1); //Символ пустого треугольника вверх ^
 	}
 	if (sdvig_PDK < 26) {
-		lcd_OutCharXY(13, 5, 161);//Символ пустого треугольника вниз V
+		lcd_OutCharXY(CHAR_ARROW_DOWN_EMPTY, 13, 5);//Символ пустого треугольника вниз V
 	}
 }
 //
 /*----Функция вывода меню сообщений----*/
-void menumess (uint8_t ms) {
+void menumess(uint8_t ms) {
 	//ms=0 - "Выключение"
   //ms=1 - "Аккумулятор разряжен!"
   //ms=2 - "Аккумулятор заряжен. Выключение"
@@ -472,12 +490,11 @@ void wr_batt() {
 	if (zar == 1) {
 		batter = 6;                  //Если идет процесс зарядки - символ сетевой вилки
 	}
-	lcd_GotoXY(13, 0);                  //Позиция символа: x=13, верхняя строка
-	lcd_OutChar(169+batter);                    //Вывод символа в буфер ОЗУ МК
+	lcd_OutCharXY(169+batter, 13, 0);                    //Вывод символа в буфер ОЗУ МК
 }
 //
 /*----Функция вывода меню зарядки----*/
-void menu_zar() {
+void menu_charge() {
 	unsigned char persent;                 //Процент заполнения символа батареи
 	//Вывод большого символа батареи
 	if (Ubat > 415) {
