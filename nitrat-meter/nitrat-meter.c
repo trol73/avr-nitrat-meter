@@ -191,7 +191,17 @@ unsigned char n_prod=0;                  //Счетчик номера проверяемых продуктов:
  * MEASSURE_SCREEN_xxx
  */
 uint8_t meassureScreen = MEASSURE_SCREEN_MEASSURE;
-unsigned char mnc_nastr=0;               //Счетчик меню настроек: 0-время подсв.,1-яркость,2-таймер,3-звук,4-контрастность,5-Uакк,6-Rx
+
+#define SETTINGS_SCREEN_HIGHLIGHT_TIME	0		// время подсветки
+#define SETTINGS_SCREEN_BRIGHTNESS		1		// яркость
+#define SETTINGS_SCREEN_TIMER			2		// таймер
+#define SETTINGS_SCREEN_SOUND			3		// звук
+#define SETTINGS_SCREEN_CONTRAST		4		// контрастность
+#define SETTINGS_SCREEN_BATTERY			5		// Uакк
+#define SETTINGS_SCREEN_RX				6		// Rx
+
+uint8_t settingsScreen = SETTINGS_SCREEN_HIGHLIGHT_TIME;               //Счетчик меню настроек: 0-время подсв.,1-яркость,2-таймер,3-звук,4-контрастность,5-Uакк,6-Rx
+
 unsigned char mnc_PDK=0;                 //Счетчик меню норм ПДК проверяемых продуктов: 0...30
 unsigned char sdvig_prod=0;              //Сдвиг отбражаемых пунктов меню проверяемых продуктов: 0...31
 unsigned char sdvig_PDK=0;               //Сдвиг отбражаемых пунктов меню норм ПКД проверяемых продуктов: 0...26
@@ -319,7 +329,7 @@ int main (void) {
 
 	//Установка скважности 2 т.сч.0 для тестового сигнала измерения
 	OCR0 = 127;                              //Тестовый сигнал - меандр
-	if ((mnc_nach == 1) && (menu_cnt == 3) && (mnc_nastr > 4)) {//Если меню калибровки
+	if ((mnc_nach == 1) && (menu_cnt == 3) && (settingsScreen > 4)) {//Если меню калибровки
 		TCCR0 = 0b01101001;                    //Пуск т.сч.0 тестового сигнала (FastPWM, OC2=0 при совпад.,OC2=1 при TOP=255,F=2МГц/1/256=7812,5Гц
 	}
 
@@ -780,8 +790,8 @@ void LoadEE(void)
   meassureScreen=eeprom_read_byte(&Emnc_izm);   //Счетчик меню измерений: 0-замер,1-сохранить,2-статистика,3-очистка статист.,4-ред.назв
   if ((meassureScreen>4)||(meassureScreen==1)) meassureScreen=0;//По умолчанию - замер, сохранять ещё нечего
   if ((n_prod<30)&&(meassureScreen==4)) meassureScreen=3;//Если название проверяем.продукта из flash и пункт Ред.назв.->Очистка статист.
-  mnc_nastr=eeprom_read_byte(&Emnc_nastr);//Счетчик меню настроек: 0-время подсв.,1-яркость,2-таймер,3-звук,4-Uакк,5-Rx
-  if (mnc_nastr>6) mnc_nastr=0;          //По умолчанию - 0 (время подсв.)
+  settingsScreen=eeprom_read_byte(&Emnc_nastr);//Счетчик меню настроек: 0-время подсв.,1-яркость,2-таймер,3-звук,4-Uакк,5-Rx
+  if (settingsScreen>6) settingsScreen=0;          //По умолчанию - 0 (время подсв.)
   mnc_PDK=eeprom_read_byte(&Emnc_PDK);   //Счетчик меню норм ПДК проверяемых продуктов: 0...30
   if (mnc_PDK>30) mnc_PDK=0;             //По умолчанию - 0
   sdvig_prod=eeprom_read_byte(&Esdvig_prod);//Сдвиг отбражаемых пунктов меню проверяемых продуктов: 0...31
@@ -823,7 +833,7 @@ void SaveEE (void)
   if (eeprom_read_byte(&Emnc_nach)!=mnc_nach) eeprom_write_byte(&Emnc_nach, mnc_nach);//Счетчик начального меню
   if (eeprom_read_byte(&En_prod)!=n_prod) eeprom_write_byte(&En_prod, n_prod);//Счетчик проверяемых продуктов
   if (eeprom_read_byte(&Emnc_izm)!=meassureScreen) eeprom_write_byte(&Emnc_izm, meassureScreen);//Счетчик меню измерений
-  if (eeprom_read_byte(&Emnc_nastr)!=mnc_nastr) eeprom_write_byte(&Emnc_nastr, mnc_nastr);//Счетчик меню настроек
+  if (eeprom_read_byte(&Emnc_nastr)!=settingsScreen) eeprom_write_byte(&Emnc_nastr, settingsScreen);//Счетчик меню настроек
   if (eeprom_read_byte(&Emnc_PDK)!=mnc_PDK) eeprom_write_byte(&Emnc_PDK, mnc_PDK);//Счетчик меню норм ПДК проверяемых продуктов
   if (eeprom_read_byte(&Esdvig_prod)!=sdvig_prod) eeprom_write_byte(&Esdvig_prod, sdvig_prod);//Сдвиг отбражаемых пунктов меню проверяемых продуктов
   if (eeprom_read_byte(&Esdvig_PDK)!=sdvig_PDK) eeprom_write_byte(&Esdvig_PDK, sdvig_PDK);//Сдвиг отбражаемых пунктов меню норм ПКД проверяемых продуктов

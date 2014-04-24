@@ -4,7 +4,7 @@
 #define CHAR_ARROW_RIGHT_EMPTY			165							// Символ пустого треугольника вправо |>
 #define CHAR_ARROW_RIGHT_FILLED			166                         // Символ закрашенного треугольника вправо |>
 #define CHAR_ARROW_LEFT_EMPTY			167                         // Символ пустого треугольника влево <|
-
+#define CHAR_BATTERY_0					169
 
 // Массив надписей меню ПДК из 12 символов
 const unsigned char PROGMEM nadp_mPDK[31][12]= {
@@ -45,12 +45,22 @@ const uint8_t PROGMEM STR_MAIN_MENU_MEASSURE[] = "Измерение  \xA5";
 const uint8_t PROGMEM STR_MAIN_MENU_SETTINGS[] = "Настройки  \xA5";
 const uint8_t PROGMEM STR_MAIN_MENU_LIMITS[] = "Нормы ПДК  \xA5";
 const uint8_t PROGMEM STR_PRODUCT_TITLE[] = " ПРОДУКТ:";
+const uint8_t PROGMEM STR_SETTINGS_TITLE[] = " НАСТРОЙКИ";
+const uint8_t PROGMEM STR_CALIBRATE[] = "КАЛИБРОВКА";
 
 const uint8_t PROGMEM STR_UAKK_V[] = "Uакк,В ";
 const uint8_t PROGMEM STR___[] = "  ";
+const uint8_t PROGMEM STR_____[] = "    ";
 //const uint8_t PROGMEM STR__V[] = " В";
 const uint8_t PROGMEM STR_SAVE[] = "Сохранить";
 const uint8_t PROGMEM STR_SAVED[] = "Сохранено";
+const uint8_t PROGMEM STR_CLEAR[] = "Очистить";
+const uint8_t PROGMEM STR_STATISTIC[] = "статистику";
+const uint8_t PROGMEM STR_EDIT_NAME[] = "Ред.назван.";
+const uint8_t PROGMEM STR_CLEAR_QUESTION[] = "Очистить?";
+const uint8_t PROGMEM STR_YES_NO[] = "Да     Нет";
+const uint8_t PROGMEM STR_EDIT_NAME_UP[] = "РЕД.НАЗВАН";
+
 
 const uint8_t PROGMEM STR_MAX[] = "Макс.";
 const uint8_t PROGMEM STR_MIN[] = "Мин.";
@@ -59,6 +69,40 @@ const uint8_t PROGMEM STR_MEASSURES[] = "Замер";
 const uint8_t PROGMEM STR_MICRO_SM_BRACKET[] = "(мкСм)";
 const uint8_t PROGMEM STR_MICRO_SM[] = "мкСм";
 
+const uint8_t PROGMEM STR_SETTINGS_TIME[] =       "T подсв.";
+const uint8_t PROGMEM STR_SETTINGS_BRIGHTNESS[] = "Яркость";
+const uint8_t PROGMEM STR_SETTINGS_TIMER[] =      "Таймер";
+const uint8_t PROGMEM STR_SETTINGS_SOUND[] =      "Звук";
+const uint8_t PROGMEM STR_SETTINGS_CONTRAST[] =   "Контраст";
+const uint8_t PROGMEM STR_ON[] = "Вкл.";
+const uint8_t PROGMEM STR_OFF[] = "Выкл";
+const uint8_t PROGMEM STR_RX_OHM[] = "Rx,Ом";
+const uint8_t PROGMEM STR_GX_MKSM[] = "Gx,мкСм";
+const uint8_t PROGMEM STR_LIMITS[] = "Нормы ПД";
+const uint8_t PROGMEM STR_K_MG[] = "К,мг";
+
+const uint8_t PROGMEM STR_TIME_VALUES[7][3] = {
+		"---",
+		"10с",
+		"15с",
+		"20с",
+		"30с",
+		"45с",
+		"60с"
+};
+
+const uint8_t PROGMEM STR_TIMER_VALUES[5][4] = {
+		"Выкл",
+		"1мин",
+		"2мин",
+		"3мин",
+		"5мин"
+};
+
+
+
+
+
 
 // Массив надписей из 10 символов
 const unsigned char PROGMEM nadp_10[15][10]= {
@@ -66,16 +110,16 @@ const unsigned char PROGMEM nadp_10[15][10]= {
 	"Настройки ",                          //1	!!
 	"Нормы ПДК ",                          //2	!!
 	" ПРОДУКТ: ",                          //3	!!
-	" НАСТРОЙКИ",                          //4
-	"КАЛИБРОВКА",                          //5
+	" НАСТРОЙКИ",                          //4	!!
+	"КАЛИБРОВКА",                          //5	!!
 	"          ",                          //6	!!
 	"Сохранить ",                          //7	!!
 	"Сохранено ",                          //8	!!
-	"Очистить  ",                          //9
-	"статистику",                          //10
-	"Ред.назван",                          //11
-	"Очистить? ",                          //12
-	"Да     Нет",                          //13
+	"Очистить  ",                          //9  !!
+	"статистику",                          //10 !!
+	"Ред.назван",                          //11 !!
+	"Очистить? ",                          //12 !!
+	"Да     Нет",                          //13 !!
 	"РЕД.НАЗВАН",                          //14
 };
 
@@ -93,14 +137,14 @@ const unsigned char PROGMEM nadpis_mes[9][11]= {
 };
 // Массив надписей из 8 символов
 const unsigned char PROGMEM nadp_8[8][8]= { 
-	"T подсв.",                            //0
-	"Яркость ",                            //1
-	"Таймер  ",                            //2
-	"Звук    ",                            //3
-	"Контраст",                            //4
+	"T подсв.",                            //0  !!!
+	"Яркость ",                            //1  !!!
+	"Таймер  ",                            //2  !!!
+	"Звук    ",                            //3  !!!
+	"Контраст",                            //4	!!!
 	"Замеров ",                            //5	!!!
-	"Gx,мкСм ",                            //6
-	"Нормы ПД",                            //7
+	"Gx,мкСм ",                            //6	!!!
+	"Нормы ПД",                            //7	!!!
 };
 
 // Массив надписей из 6 символовs
@@ -110,27 +154,27 @@ const unsigned char PROGMEM nadp_6[8][6]= {
 	"Мин.  ",                              //2
 	"Uакк. ",                              //3
 	"Uакк,В",                              //4	!!!
-	"Rx,Ом ",                              //5
+	"Rx,Ом ",                              //5	!!!
 	"(мкСм)",                              //6	!!!
 	" мкСм ",                              //7	!!!
 };
 
 // Массив надписей из 4 символов
 const unsigned char PROGMEM nadp_4[15][4]= { 
-	"Выкл",                                //0
-	"1мин",                                //1
-	"2мин",                                //2
-	"3мин",                                //3
-	"5мин",                                //4
-	" ---",                                //5
-	" 10с",                                //6
-	" 15с",                                //7
-	" 20с",                                //8
-	" 30с",                                //9
-	" 45с",                                //10
-	" 60с",                                //11
-	"К,мг",                                //12
-	"Выкл",                                //13
-	"Вкл.",                                //14
+	"Выкл",                                //0	!!
+	"1мин",                                //1	!!
+	"2мин",                                //2	!!
+	"3мин",                                //3	!!
+	"5мин",                                //4	!!
+	" ---",                                //5	!!
+	" 10с",                                //6	!!
+	" 15с",                                //7	!!
+	" 20с",                                //8	!!
+	" 30с",                                //9	!!
+	" 45с",                                //10	!!
+	" 60с",                                //11	!!
+	"К,мг",                                //12	!!
+	"Выкл",                                //13	!!
+	"Вкл.",                                //14	!!
 };
 
