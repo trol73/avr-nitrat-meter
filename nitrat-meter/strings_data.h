@@ -7,7 +7,7 @@
 #define CHAR_BATTERY_0					169
 
 // Массив надписей меню ПДК из 12 символов
-const unsigned char PROGMEM nadp_mPDK[31][12]= {
+const char PROGMEM nadp_mPDK[31][12]= {
 	"Абрикос   60",
 	"Арбуз     60",
 	"Банан    200",
@@ -41,140 +41,73 @@ const unsigned char PROGMEM nadp_mPDK[31][12]= {
 	"Прочее   200"
 };
 
-const uint8_t PROGMEM STR_MAIN_MENU_MEASSURE[] = "Измерение  \xA5";
-const uint8_t PROGMEM STR_MAIN_MENU_SETTINGS[] = "Настройки  \xA5";
-const uint8_t PROGMEM STR_MAIN_MENU_LIMITS[] = "Нормы ПДК  \xA5";
-const uint8_t PROGMEM STR_PRODUCT_TITLE[] = " ПРОДУКТ:";
-const uint8_t PROGMEM STR_SETTINGS_TITLE[] = " НАСТРОЙКИ";
-const uint8_t PROGMEM STR_CALIBRATE[] = "КАЛИБРОВКА";
+const char PROGMEM STR_MAIN_MENU_MEASSURE[] = "Измерение  \xA5";
+const char PROGMEM STR_MAIN_MENU_SETTINGS[] = "Настройки  \xA5";
+const char PROGMEM STR_MAIN_MENU_LIMITS[] = "Нормы ПДК  \xA5";
+const char PROGMEM STR_PRODUCT_TITLE[] = " ПРОДУКТ:";
+const char PROGMEM STR_SETTINGS_TITLE[] = " НАСТРОЙКИ";
+const char PROGMEM STR_CALIBRATE[] = "КАЛИБРОВКА";
 
-const uint8_t PROGMEM STR_UAKK_V[] = "Uакк,В ";
-const uint8_t PROGMEM STR___[] = "  ";
-const uint8_t PROGMEM STR_____[] = "    ";
+const char PROGMEM STR_UAKK_V[] = "Uакк,В ";
+const char PROGMEM STR___[] = "  ";
+const char PROGMEM STR_____[] = "    ";
+const char PROGMEM STR_________[] = "        ";
 //const uint8_t PROGMEM STR__V[] = " В";
-const uint8_t PROGMEM STR_SAVE[] = "Сохранить";
-const uint8_t PROGMEM STR_SAVED[] = "Сохранено";
-const uint8_t PROGMEM STR_CLEAR[] = "Очистить";
-const uint8_t PROGMEM STR_STATISTIC[] = "статистику";
-const uint8_t PROGMEM STR_EDIT_NAME[] = "Ред.назван.";
-const uint8_t PROGMEM STR_CLEAR_QUESTION[] = "Очистить?";
-const uint8_t PROGMEM STR_YES_NO[] = "Да     Нет";
-const uint8_t PROGMEM STR_EDIT_NAME_UP[] = "РЕД.НАЗВАН";
+const char PROGMEM STR_SAVE[] = "Сохранить";
+const char PROGMEM STR_SAVED[] = "Сохранено";
+const char PROGMEM STR_CLEAR[] = "Очистить";
+const char PROGMEM STR_STATISTIC[] = "статистику";
+const char PROGMEM STR_EDIT_NAME[] = "Ред.назван.";
+const char PROGMEM STR_CLEAR_QUESTION[] = "Очистить?";
+const char PROGMEM STR_YES_NO[] = " Да     Нет ";
+const char PROGMEM STR_EDIT_NAME_UP[] = "РЕД.НАЗВАН";
 
 
-const uint8_t PROGMEM STR_MAX[] = "Макс.";
-const uint8_t PROGMEM STR_MIN[] = "Мин.";
-const uint8_t PROGMEM STR_MEASSURES_CNT[] = "Замеров";
-const uint8_t PROGMEM STR_MEASSURES[] = "Замер";
-const uint8_t PROGMEM STR_MICRO_SM_BRACKET[] = "(мкСм)";
-const uint8_t PROGMEM STR_MICRO_SM[] = "мкСм";
+const char PROGMEM STR_MAX[] = "Макс.";
+const char PROGMEM STR_MIN[] = "Мин.";
+const char PROGMEM STR_MEASSURES_CNT[] = "Замеров";
+const char PROGMEM STR_MEASSURES[] = "Замер";
+const char PROGMEM STR_MICRO_SM_BRACKET[] = "(мкСм)";
+const char PROGMEM STR_MICRO_SM[] = "мкСм";
 
-const uint8_t PROGMEM STR_SETTINGS_TIME[] =       "T подсв.";
-const uint8_t PROGMEM STR_SETTINGS_BRIGHTNESS[] = "Яркость";
-const uint8_t PROGMEM STR_SETTINGS_TIMER[] =      "Таймер";
-const uint8_t PROGMEM STR_SETTINGS_SOUND[] =      "Звук";
-const uint8_t PROGMEM STR_SETTINGS_CONTRAST[] =   "Контраст";
-const uint8_t PROGMEM STR_ON[] = "Вкл.";
-const uint8_t PROGMEM STR_OFF[] = "Выкл";
-const uint8_t PROGMEM STR_RX_OHM[] = "Rx,Ом";
-const uint8_t PROGMEM STR_GX_MKSM[] = "Gx,мкСм";
-const uint8_t PROGMEM STR_LIMITS[] = "Нормы ПД";
-const uint8_t PROGMEM STR_K_MG[] = "К,мг";
+const char PROGMEM STR_SETTINGS_TIME[] =       "T подсв. ";
+const char PROGMEM STR_SETTINGS_BRIGHTNESS[] = "Яркость";
+const char PROGMEM STR_SETTINGS_TIMER[] =      "Таймер  ";
+const char PROGMEM STR_SETTINGS_SOUND[] =      "Звук    ";
+const char PROGMEM STR_SETTINGS_CONTRAST[] =   "Контраст";
+const char PROGMEM STR_ON[] = "Вкл.";
+const char PROGMEM STR_OFF[] = "Выкл";
+const char PROGMEM STR_RX_OHM[] = "Rx,Ом";
+const char PROGMEM STR_GX_MKSM[] = "Gx,мкСм";
+const char PROGMEM STR_LIMITS[] = "Нормы ПД";
+const char PROGMEM STR_K_MG[] = "К,мг";
 
-const uint8_t PROGMEM STR_TIME_VALUES[7][3] = {
-		"---",
-		"10с",
-		"15с",
-		"20с",
-		"30с",
-		"45с",
-		"60с"
+const char PROGMEM STR_SHUTTING_DOWN[] = "Выключение!";
+const char PROGMEM STR_BATTERY[] = "Аккумулятор";
+const char PROGMEM STR_DISCHARGED[] = "разряжен!";
+const char PROGMEM STR_CHARGED[] = "разряжен!";
+const char PROGMEM STR_STATISTIC_IS[] = "Статистика";
+const char PROGMEM STR_CLEANED[] = "очищена!";
+const char PROGMEM STR_RESULT[] = "Замер";
+const char PROGMEM STR_STORED[] = "сохранён!";
+
+
+const char PROGMEM STR_TIME_VALUES[7][4] = {
+		"---\x00",
+		"10с\x00",
+		"15с\x00",
+		"20с\x00",
+		"30с\x00",
+		"45с\x00",
+		"60с\x00"
 };
 
-const uint8_t PROGMEM STR_TIMER_VALUES[5][4] = {
-		"Выкл",
-		"1мин",
-		"2мин",
-		"3мин",
-		"5мин"
+const char PROGMEM STR_TIMER_VALUES[5][5] = {
+		"Выкл\x00",
+		"1мин\x00",
+		"2мин\x00",
+		"3мин\x00",
+		"5мин\x00"
 };
 
-
-
-
-
-
-// Массив надписей из 10 символов
-const unsigned char PROGMEM nadp_10[15][10]= {
-	"Измерение ",                          //0	!!
-	"Настройки ",                          //1	!!
-	"Нормы ПДК ",                          //2	!!
-	" ПРОДУКТ: ",                          //3	!!
-	" НАСТРОЙКИ",                          //4	!!
-	"КАЛИБРОВКА",                          //5	!!
-	"          ",                          //6	!!
-	"Сохранить ",                          //7	!!
-	"Сохранено ",                          //8	!!
-	"Очистить  ",                          //9  !!
-	"статистику",                          //10 !!
-	"Ред.назван",                          //11 !!
-	"Очистить? ",                          //12 !!
-	"Да     Нет",                          //13 !!
-	"РЕД.НАЗВАН",                          //14
-};
-
-/*Массив надписей сообщений из 11 символов*/
-const unsigned char PROGMEM nadpis_mes[9][11]= { 
-	"           ",                         //0
-	"Аккумулятор",                         //1
-	" разряжен! ",                         //2
-	" заряжен!  ",                         //3
-	"Выключение!",                         //4
-	"Статистика ",                         //5
-	" очищена!  ",                         //6
-	"  Замер    ",                         //7
-	" сохранён! ",                         //8
-};
-// Массив надписей из 8 символов
-const unsigned char PROGMEM nadp_8[8][8]= { 
-	"T подсв.",                            //0  !!!
-	"Яркость ",                            //1  !!!
-	"Таймер  ",                            //2  !!!
-	"Звук    ",                            //3  !!!
-	"Контраст",                            //4	!!!
-	"Замеров ",                            //5	!!!
-	"Gx,мкСм ",                            //6	!!!
-	"Нормы ПД",                            //7	!!!
-};
-
-// Массив надписей из 6 символовs
-const unsigned char PROGMEM nadp_6[8][6]= {
-	"Замер ",                              //0	!!!
-	"Макс. ",                              //1	!!!
-	"Мин.  ",                              //2
-	"Uакк. ",                              //3
-	"Uакк,В",                              //4	!!!
-	"Rx,Ом ",                              //5	!!!
-	"(мкСм)",                              //6	!!!
-	" мкСм ",                              //7	!!!
-};
-
-// Массив надписей из 4 символов
-const unsigned char PROGMEM nadp_4[15][4]= { 
-	"Выкл",                                //0	!!
-	"1мин",                                //1	!!
-	"2мин",                                //2	!!
-	"3мин",                                //3	!!
-	"5мин",                                //4	!!
-	" ---",                                //5	!!
-	" 10с",                                //6	!!
-	" 15с",                                //7	!!
-	" 20с",                                //8	!!
-	" 30с",                                //9	!!
-	" 45с",                                //10	!!
-	" 60с",                                //11	!!
-	"К,мг",                                //12	!!
-	"Выкл",                                //13	!!
-	"Вкл.",                                //14	!!
-};
 
