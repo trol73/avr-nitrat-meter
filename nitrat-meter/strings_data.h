@@ -91,6 +91,10 @@ const char PROGMEM STR_CLEANED[] = "очищена!";
 const char PROGMEM STR_RESULT[] = "Замер";
 const char PROGMEM STR_STORED[] = "сохранён!";
 
+const char PROGMEM STR_UNKNOWN_VAL_2[] = "??";
+const char PROGMEM STR_UNKNOWN_VAL_3[] = "???";
+const char PROGMEM STR_UNKNOWN_VAL_5[] = "?????";
+const char PROGMEM STR_UNKNOWN_VAL_4_1[] = "????.?";
 
 const char PROGMEM STR_TIME_VALUES[7][4] = {
 		"---\x00",

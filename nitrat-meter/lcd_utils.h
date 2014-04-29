@@ -1,10 +1,13 @@
 void LcdAnim (void);                     //Функция вывода аннимации в виде заполняющейся шкалы процесса замера
-void lcd_OutInt(bool gash, unsigned int data, uint8_t l, uint8_t r);//Функция вывода (r+l)-значн.числа типа unsigned int с гаш.незнач.нуля с текущей позиции
+void lcd_OutInt(uint16_t val);
+void lcd_OutIntXY(uint16_t val, uint8_t x, uint8_t y);
+//void lcd_OutInt(bool gash, unsigned int data, uint8_t l, uint8_t r);//Функция вывода (r+l)-значн.числа типа unsigned int с гаш.незнач.нуля с текущей позиции
 void lcd_OutIntBuf(bool gash, unsigned int data, uint8_t l, uint8_t r);//Функция вывода (r+l)-значн.числа типа unsigned int в буфер с гаш.незнач.нуля
 void DrawBattery(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t persent);//Вывод батарейки с заполнением ее на %
 void DrawProgressBar(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t persent);//Вывод прогресс-бара и заполнение его на "процент"
 void LcdBarLine(uint8_t line, uint8_t persent);//Вывод прогресс-бара в указанной строке
 
+void lcd_OutFloat1(uint16_t val);
 
 
 /*-----Функция вывода анимации в виде заполняющейся шкалы процесса замера-----*/
@@ -21,14 +24,34 @@ void LcdAnim() {
 /**
  * Функция вывода (r+l)-значн.числа типа unsigned int с гаш.незнач.нуля с текущей позиции
 */
-void lcd_OutInt(bool gash, unsigned int data, uint8_t l, uint8_t r) {
+//void lcd_OutInt(bool gash, unsigned int data, uint8_t l, uint8_t r) {
 /*gash=0 - нет гашения, 1 - гашение 1-го незнач.нуля слева,
   data - число; l - число выводимых цифр слева, r - справа от запятой)
 */
-	lcd_OutIntBuf(gash, data, l, r);
-	LcdString();                           //Вывод строки из текстового буфера с текущей позиции
+//	lcd_OutIntBuf(gash, data, l, r);
+//	LcdString();                           //Вывод строки из текстового буфера с текущей позиции
+//}
+
+void lcd_OutInt(uint16_t val) {
+	uint16_t num = 10000;
+	bool started = false;
+
+	while (num > 0) {
+		uint8_t b = val / num;
+		if (b > 0 || started || num == 1) {
+			lcd_OutChar('0' + b);
+			started = true;
+		}
+		val -= b * num;
+		num /= 10;
+	}
 }
 
+
+void lcd_OutIntXY(uint16_t val, uint8_t x, uint8_t y) {
+	lcd_GotoXY(x, y);
+	lcd_OutInt(val);
+}
 /**
  * Функция вывода (r+l)-значн.числа типа unsigned int в буфер с гаш.незнач.нуля
  *
@@ -172,5 +195,9 @@ void LcdBarLine(unsigned char line, unsigned char persent) {
 	DrawProgressBar(0, line, 83, line+4, persent);
 }
 
-
+void lcd_OutFloat1(uint16_t val) {
+	lcd_OutInt(val / 10);
+	lcd_OutChar('.');
+	lcd_OutChar(val % 10);
+}
 

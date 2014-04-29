@@ -1,42 +1,42 @@
-void menu_charge (void);                    //Функция вывода меню зарядки
-void menu_main (void);                   //Функция вывода начального меню
-void menu_product (void);                   //Функция вывода меню выбора продукта
-void menu_izm (void);                    //Функция вывода меню измерения
-void menu_nastr (void);                  //Функция вывода меню настроек
-void menu_PDK (void);                    //Функция вывода меню норм ПДК
-
+void DrawMenuCharge (void);                    //Функция вывода меню зарядки
+void DrawMenuMain (void);                   //Функция вывода начального меню
+void DrawMenuProduct (void);                   //Функция вывода меню выбора продукта
+void DrawMenuMeassure (void);                    //Функция вывода меню измерения
+void DrawMenuSettings (void);                  //Функция вывода меню настроек
+void DrawMenuLimits (void);                    //Функция вывода меню норм ПДК
+void DrawBatteryIcon();                     //Функция вывода символа батарейки
 /**
  * Функция вывода меню
  **/
-void menu() {
+void DrawMenu() {
 	if (T_menu == 0) {
 		return;                 //Если еще не прошло 0.26 сек - выход
 	}
 	clean_cache();                         //Очистка КЭШ-буфера в ОЗУ МК
 	
 	if (rezh == 0 && zar > 0) {               //Если режим выключения работы и зарядки - индикация процесса зарядки
-		menu_charge();                          //Вывод меню процесса зарядки
+		DrawMenuCharge();                          //Вывод меню процесса зарядки
 	} else {
 		switch (menu_cnt) {
 			case 0:
-				menu_main();     //Вывод начального меню
+				DrawMenuMain();     //Вывод начального меню
 				break;
 			case 1:
-				menu_product();     //Вывод меню выбора продукта
+				DrawMenuProduct();     //Вывод меню выбора продукта
 				break;
 			case 2:
-				menu_izm();      //Вывод меню измерения
+				DrawMenuMeassure();      //Вывод меню измерения
 				break;
 			case 3:
-				menu_nastr();    //Вывод меню настроек
+				DrawMenuSettings();    //Вывод меню настроек
 				break;
 			case 4:
-				menu_PDK();      //Вывод меню норм ПДК
+				DrawMenuLimits();      //Вывод меню норм ПДК
 				break;
 
 		}
 	}
-	wr_batt();                             //Вывод символа батарейки в правом верхнем углу
+	DrawBatteryIcon();                             //Вывод символа батарейки в правом верхнем углу
 	lcd_Update();                           //Вывод информации в дисплей
 	T_menu = 0;                              //Сброс признака прошедшего 0,26-секундного интервала
 }
@@ -44,7 +44,7 @@ void menu() {
 /**
  * Функция вывода начального меню
  */
-void menu_main() {
+void DrawMenuMain() {
 	//Вывод курсора
 	lcd_OutCharXY(CHAR_ARROW_RIGHT_FILLED, 0, mnc_nach+1);                           //Символ закрашенного треугольника вправо |>
 	//Вывод надписей меню
@@ -58,7 +58,7 @@ void menu_main() {
 }
 //
 /*----Функция вывода меню выбора продукта----*/
-void menu_product() {
+void DrawMenuProduct() {
 	//Вывод верхнего заголовка
 	lcd_OutCharXY(CHAR_ARROW_LEFT_EMPTY, 0, 0);
 	lcd_OutStr(STR_PRODUCT_TITLE);
@@ -90,7 +90,7 @@ void menu_product() {
 }
 //
 /*----Функция вывода меню измерения----*/
-void menu_izm() {
+void DrawMenuMeassure() {
 	unsigned char i=0;                     //Счетчик символов
 	unsigned char max=0;                   //Максимум для вывода статистики
 	uint8_t d = 0;                     //Промежуточные данные
@@ -123,22 +123,28 @@ void menu_izm() {
 			if (Gx >= Gmin) {                     //Если % положительные
 				datl = Gx;
 				dat = ((datl-Gmin)*100)/(Gmax-Gmin);//Вычисление %
+				lcd_GotoXY(9, 0);
 				if (dat < 999) {
-					lcd_OutIntBuf(2, dat, 3, 0);//Если <999 - запись в текстовый буфер вычисленных %
+					lcd_OutInt(dat);
+//					lcd_OutIntBuf(2, dat, 3, 0);//Если <999 - запись в текстовый буфер вычисленных %
 				} else {
-					sprintf(lcd_buf, "???");    //Иначе - копирование в буфер строки "???"
+					lcd_OutStr(STR_UNKNOWN_VAL_3);
+//					sprintf(lcd_buf, "???");    //Иначе - копирование в буфер строки "???"
 				}
-				LcdStringXY(9, 0);               //Вывод строки из текстового буфера x=9, y=0
+//				LcdStringXY(9, 0);               //Вывод строки из текстового буфера x=9, y=0
 			} else {                               //Иначе, если % отрицательные
 				datl = Gmin;                       //Изменение типа переменной на unsigned long
 				dat = ((datl-Gx)*100)/(Gmax-Gmin); //Вычисление %
-				if (dat < 99) {
-					lcd_OutIntBuf(1, dat, 2, 0);//Если <99 - запись в текстовый буфер вычисленных %
-				} else {
-					sprintf(lcd_buf, "??");     //Иначе - копирование в буфер строки "???"
-				}
 				lcd_OutChar('-');                     //Если % отрицательные - вывод знака "-"
-				LcdStringXY(10, 0);              //Вывод строки из текстового буфера x=9, y=0
+				lcd_GotoXY(10, 0);
+				if (dat < 99) {
+					lcd_OutInt(dat);
+					//lcd_OutIntBuf(1, dat, 2, 0);//Если <99 - запись в текстовый буфер вычисленных %
+				} else {
+					lcd_OutStr(STR_UNKNOWN_VAL_2);
+					//sprintf(lcd_buf, "??");     //Иначе - копирование в буфер строки "???"
+				}
+				//LcdStringXY(10, 0);              //Вывод строки из текстового буфера x=9, y=0
 			}
 			lcd_OutChar('%');                       //Вывод символа "%"
 		}
@@ -158,11 +164,12 @@ void menu_izm() {
 			lcd_OutStr(STR_MICRO_SM_BRACKET);	// Если еще не было ни одного замера - вывод надписи "(мкСм)"
 		} else {                                //Иначе - вывод проводимости в мкСм
 			if (!meassureOk) {
-				sprintf(lcd_buf, "????.?");//Если признак переполнения - копирование строки в буфер
+				lcd_OutStr(STR_UNKNOWN_VAL_4_1);
 			} else {
-				lcd_OutIntBuf(3, Gx, 4, 1);   //Иначе - вывод в буфер проводимости в мкСм
+				lcd_OutFloat1(Gx);
+				//lcd_OutIntBuf(3, Gx, 4, 1);   //Иначе - вывод в буфер проводимости в мкСм
 			}
-			LcdString();                       //Вывод строки из буфера с текущей позиции
+			//LcdString();                       //Вывод строки из буфера с текущей позиции
 		}
 		lcd_OutChar(CHAR_ARROW_RIGHT_EMPTY);                         //Символ пустого треугольника вправо |>
 		//Вывод надписей второй строки меню
@@ -185,16 +192,20 @@ void menu_izm() {
 		//Вывод надписей третьей строки меню
 		lcd_OutStrXY(STR_MAX, 1, 3);
 		if (!meassureOk) {
-			LcdStr("????.?");
+			lcd_OutStr(STR_UNKNOWN_VAL_4_1);
+			//LcdStr("????.?");
 		} else {
-			lcd_OutInt(3, Gmax, 4, 1);         //Вывод Gmax в мкСм
+			lcd_OutFloat1(Gmax);
+			//lcd_OutInt(3, Gmax, 4, 1);         //Вывод Gmax в мкСм
 		}
 		//Вывод надписей четвертой строки меню
 		lcd_OutStrXY(STR_MIN, 1, 4);
 		if (!meassureOk) {
-			LcdStr("????.?");
+			lcd_OutStr(STR_UNKNOWN_VAL_4_1);
+			//LcdStr("????.?");
 		} else {
-			lcd_OutInt(3, Gmin, 4, 1);         //Вывод Gmin в мкСм
+			lcd_OutFloat1(Gmin);				//Вывод Gmin в мкСм
+			//lcd_OutInt(3, Gmin, 4, 1);         //Вывод Gmin в мкСм
 		}
 		//Вывод надписей пятой строки меню
 		lcd_OutStrXY(STR_MEASSURES_CNT, 1, 5);
@@ -204,12 +215,15 @@ void menu_izm() {
 	} else if (meassureScreen == MEASSURE_SCREEN_STATISTIC) {
     //Вывод текущего измеренного значения в мкСм
       if (meassureStatus != MEASSURE_STATUS_NONE) {                       //Если был замер
+    	  lcd_GotoXY(1, 1);
     	  if (Gx == 0xffff) {
-    		  sprintf(lcd_buf, "????.?");//Если признак переполнения - копирование строки в буфер
+    		  lcd_OutStr(STR_UNKNOWN_VAL_4_1);
+    		  //sprintf(lcd_buf, "????.?");//Если признак переполнения - копирование строки в буфер
     	  } else {
-    		  lcd_OutIntBuf(3, Gx, 4, 1); //Вывод проводимости в мкСм
+    		  lcd_OutFloat1(Gx);
+    		  //lcd_OutIntBuf(3, Gx, 4, 1); //Вывод проводимости в мкСм
     	  }
-    	  LcdStringXY(1, 1);
+    	  //LcdStringXY(1, 1);
     	  lcd_OutStr(STR_MICRO_SM);
       }
       // Вывод стрелок прокрутки
@@ -328,7 +342,7 @@ void menu_izm() {
 }
 //
 /*----Функция вывода меню настроек----*/
-void menu_nastr () {
+void DrawMenuSettings () {
 	unsigned char i=0;                     //Счетчик символов
 	unsigned char m=0;                     //Счетчик по горизонтали массива nadp_mPDK[31][12]
 	unsigned char y_kur=0;                 //Местоположение курсора по y
@@ -391,9 +405,10 @@ void menu_nastr () {
 		lcd_OutChar(' ');                         //Вывод пробела
 		r = clk_Rx(ADCx10);                    //Вычисление Rx
 		if (r == 0xffff) {
-			sprintf(lcd_buf, "?????");//Если признак переполнения - копирование строки в буфер
+			lcd_OutStr(STR_UNKNOWN_VAL_5);	//Если признак переполнения - копирование строки в буфер
 		} else {
-			lcd_OutIntBuf(2, r, 5, 0);      //Иначе - вывод сопротивления в Омах
+			lcd_OutInt(r);		//Иначе - вывод сопротивления в Омах
+			//lcd_OutIntBuf(2, r, 5, 0);      //Иначе - вывод сопротивления в Омах
 		}
 		if (akt == 1) {                         //Если активен пункт меню настроек
 			if (settingsScreen==6) dat=CHAR_ARROWS_UP_DOWN;         //Если активен данный пункт - символ двух закрашенных треугольников вверх+вниз
@@ -403,16 +418,21 @@ void menu_nastr () {
 		//Вывод пункта измеренной проводимости
 		lcd_OutStrXY(STR_GX_MKSM, 0, 5);		// Вывод надписи "Gx,мкСм "
 		r = clk_Gx10(ADCx10);                  //Вычисление Gx
-		if (r == 0xffff) sprintf(lcd_buf, "????.?");//Если признак переполнения - копирование строки в буфер
-		else lcd_OutIntBuf(3, r, 4, 1);      //Иначе - вывод проводимости в мкСм
-		LcdStringXY(8, 5);
+		lcd_GotoXY(8, 5);
+		if (r == 0xffff) {
+			lcd_OutStr(STR_UNKNOWN_VAL_4_1);		//Если признак переполнения - копирование строки в буфер
+		} else {
+			lcd_OutFloat1(r);
+			//lcd_OutIntBuf(3, r, 4, 1);      //Иначе - вывод проводимости в мкСм
+		}
+		//LcdStringXY(8, 5);
 	}
 	//Вывод курсора
 	lcd_OutCharXY(akt == 1 ? CHAR_ARROW_LEFT_EMPTY : CHAR_ARROW_RIGHT_FILLED, 0, y_kur);	//Символ закрашенного треугольника вправо |> или пустого влево <|
 }
 //
 /*----Функция вывода меню норм ПДК----*/
-void menu_PDK() {
+void DrawMenuLimits() {
 	//Вывод верхнего заголовка "Нормы ПДК,мг"
 	lcd_OutCharXY(CHAR_ARROW_LEFT_EMPTY, 0, 0);                   //Символ пустого треугольника влево <|, x=0, y=0
 	lcd_OutStr(STR_LIMITS);					//Вывод надписи "Нормы ПД"
@@ -465,12 +485,12 @@ void drawMessage(uint8_t ms) {
 			lcd_OutStrXY(STR_STORED, 3, 4);
 			break;
 	}
-	wr_batt();                             //Вывод символа батарейки в правом верхнем углу
+	DrawBatteryIcon();                             //Вывод символа батарейки в правом верхнем углу
 	lcd_Update();                           //Вывод информации в дисплей
 }
 //
 /*----Функция вывода символа батарейки в правом верхнем углу----*/
-void wr_batt() {
+void DrawBatteryIcon() {
 	if (zar == 1) {
 		batter = 6;                  //Если идет процесс зарядки - символ сетевой вилки
 	}
@@ -491,7 +511,7 @@ uint8_t calcBatteryPercent(uint16_t u) {
 }
 //
 /*----Функция вывода меню зарядки----*/
-void menu_charge() {
+void DrawMenuCharge() {
 	uint8_t percent = calcBatteryPercent(Ubat);
 	DrawBattery(34, 2, 48, 28, percent);       //Вывод большого символа батареи с заполнением на %
 	// Вывод напряжения батареи
