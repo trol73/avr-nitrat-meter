@@ -1,9 +1,9 @@
-void DrawMenuCharge (void);                    //Функция вывода меню зарядки
-void DrawMenuMain (void);                   //Функция вывода начального меню
-void DrawMenuProduct (void);                   //Функция вывода меню выбора продукта
-void DrawMenuMeassure (void);                    //Функция вывода меню измерения
-void DrawMenuSettings (void);                  //Функция вывода меню настроек
-void DrawMenuLimits (void);                    //Функция вывода меню норм ПДК
+void DrawMenuCharge();                    //Функция вывода меню зарядки
+void DrawMenuMain();                   //Функция вывода начального меню
+void DrawMenuProduct();                   //Функция вывода меню выбора продукта
+void DrawMenuMeassure();                    //Функция вывода меню измерения
+void DrawMenuSettings();                  //Функция вывода меню настроек
+void DrawMenuLimits();                    //Функция вывода меню норм ПДК
 void DrawBatteryIcon();                     //Функция вывода символа батарейки
 /**
  * Функция вывода меню
@@ -14,7 +14,7 @@ void DrawMenu() {
 	}
 	clean_cache();                         //Очистка КЭШ-буфера в ОЗУ МК
 	
-	if (rezh == 0 && zar > 0) {               //Если режим выключения работы и зарядки - индикация процесса зарядки
+	if (rezh == 0 && chargeMode > 0) {               //Если режим выключения работы и зарядки - индикация процесса зарядки
 		DrawMenuCharge();                          //Вывод меню процесса зарядки
 	} else {
 		switch (menu_cnt) {
@@ -46,7 +46,7 @@ void DrawMenu() {
  */
 void DrawMenuMain() {
 	//Вывод курсора
-	lcd_OutCharXY(CHAR_ARROW_RIGHT_FILLED, 0, mnc_nach+1);                           //Символ закрашенного треугольника вправо |>
+	lcd_OutCharXY(CHAR_ARROW_RIGHT_FILLED, 0, mainMenuIndex+1);                           //Символ закрашенного треугольника вправо |>
 	//Вывод надписей меню
 	lcd_OutStrXY(STR_MAIN_MENU_MEASSURE, 1, 1);
 	lcd_OutStrXY(STR_MAIN_MENU_SETTINGS, 1, 2);
@@ -250,7 +250,7 @@ void DrawMenuMeassure() {
     		  dat = (22*eeprom_read_byte(&mas_stat[n_prod][i]))/max;//Максимальная высота - 22 пикселя
     		  d = dat;
     		  if (d > 0) {
-    			  lcd_DrawRect(12+i*3, 38, d, 3, 1);	//Рисование закрашенного прямоугольника (низ: y=38)
+    			  lcd_DrawRect(12+i*3, 38, d, 3, PIXEL_ON);	//Рисование закрашенного прямоугольника (низ: y=38)
     		  }
     	  }
       }
@@ -326,15 +326,15 @@ void DrawMenuMeassure() {
 				lcd_OutChar('.');                   //Точка
 				lcd_GotoXY(3, 2);           //x=3, y=2
 		i=0;
-          while (i<8)                    //Вывод строки из 8 символов
-          { lcd_OutChar(mas_name[n_prod-30][i]);
-            i++;
+          while (i<8) {                   //Вывод строки из 8 символов
+        	  lcd_OutChar(mas_name[n_prod-30][i]);
+        	  i++;
           }
           if (n_nazv < 7) {                  //Если не последняя редактируемая буква
         	  lcd_OutChar(' ');                 //Пробел
         	  lcd_OutChar(CHAR_ARROW_RIGHT_EMPTY);                 //Символ пустого треугольника вправо |>
           }
-        //Вывод курсора под редактируемой буквой
+          //Вывод курсора под редактируемой буквой
           lcd_OutCharXY(CHAR_ARROWS_UP_DOWN, 3+n_nazv, 3);    //Символ двух закрашенных треугольников вверх+вниз
         }
         lcd_OutCharXY(d, 0, 0);               //Вывод символа в позиции x=0, y=0
@@ -362,13 +362,13 @@ void DrawMenuSettings () {
 		lcd_OutStr(STR_TIME_VALUES[ligh_off]);
 
 		lcd_OutStrXY(STR_SETTINGS_BRIGHTNESS, 1, 2);
-		LcdSkalaXYFont (9, 2, 3, yark*100/9);//Вывод шкалы из 10 черточек, заполненной на "процент"
+		LcdSkalaXYFont (9, 2, 3, brightness*100/9);//Вывод шкалы из 10 черточек, заполненной на "процент"
 
 		lcd_OutStrXY(STR_SETTINGS_TIMER, 1, 3);
 		lcd_OutStr(STR_TIMER_VALUES[taym_off]);		//Вывод надписей "Выкл", "1мин", "2мин", "3мин", "5мин"
 
 		lcd_OutStrXY(STR_SETTINGS_SOUND, 1, 4);
-		lcd_OutStr(sound ? STR_ON : STR_OFF);		//Вывод "Выкл" или "Вкл."
+		lcd_OutStr(soundEnabled ? STR_ON : STR_OFF);		//Вывод "Выкл" или "Вкл."
 
 		lcd_OutStrXY(STR_SETTINGS_CONTRAST, 1, 5);
 		lcd_OutInt(3, contrast, 4, 0);
@@ -491,24 +491,13 @@ void drawMessage(uint8_t ms) {
 //
 /*----Функция вывода символа батарейки в правом верхнем углу----*/
 void DrawBatteryIcon() {
-	if (zar == 1) {
+	if (chargeMode == CHARGE_MODE_CHARGING) {
 		batter = 6;                  //Если идет процесс зарядки - символ сетевой вилки
 	}
 	lcd_OutCharXY(CHAR_BATTERY_0 + batter, 13, 0);                    //Вывод символа в буфер ОЗУ МК
 }
 
-uint8_t calcBatteryPercent(uint16_t u) {
-	if (u > 415) {
-		return 100;
-	} else if (u > 380) {
-		return (u-380)*25/35 + 75;	// Uбат > 3,8В -> 75...100%
-	} else if (u > 360) {
-		return (u-360)*50/20+25;	// Uбат > 3,6В - 25...75%
-	} else if (u > 300) {
-		return (u-300)*25/60;		// Uбат > 3,0В - 0...25%
-	}
-	return 0;
-}
+
 //
 /*----Функция вывода меню зарядки----*/
 void DrawMenuCharge() {

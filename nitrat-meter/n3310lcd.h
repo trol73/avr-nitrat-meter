@@ -499,23 +499,23 @@ void lcd_DrawImage(const uint8_t *imageData) {
 }
 //
 /*-----Функция управления пикселем с координатами (x, y)-----*/
-void lcd_DrawPixel (uint8_t x, uint8_t y, uint8_t mode) {//mode: PIXEL_ON или 1, PIXEL_OFF или 0, PIXEL_XOR или 2
+void lcd_DrawPixel(uint8_t x, uint8_t y, uint8_t mode) {//mode: PIXEL_ON или 1, PIXEL_OFF или 0, PIXEL_XOR или 2
 #ifdef DISPLAY_CHECK_ARGS
 	if (x > LCD_X_RES || y > LCD_Y_RES)
 		return;               //Если некорректные координаты Y - выход
 #endif
 	uint16_t index = (y/8)*84+x;                      //Вычисление номера байта в массиве памяти дисплея
-	uint8_t offset = y - ((y/8)*8);                    //Вычисление номера бита в этом байте
+	uint8_t offset = y - (y/8)*8;                    //Вычисление номера бита в этом байте
 	uint8_t data = LcdCache[index];                  //Чтение байта по найденному индексу
 	switch (mode) {
 		case PIXEL_OFF:
 			data &= ~_BV(offset);
 			break;
 		case PIXEL_ON:
-			data |= ~_BV(offset);
+			data |= _BV(offset);
 			break;
 		case PIXEL_XOR:
-			data ^= ~_BV(offset);
+			data ^= _BV(offset);
 			break;
 	}
 	LcdCache[index] = data;                  //Загрузка байта назад в кэш
@@ -627,7 +627,7 @@ void lcd_DrawCircle(char x, char y, char radius, uint8_t mode){
 }
 //
 /*-----Функция рисования закрашенного прямоугольника-------*/
-void lcd_DrawRect(uint8_t baseX, uint8_t baseY, uint8_t height, uint8_t width, uint8_t mode) {
+void lcd_DrawRect(uint8_t baseX, uint8_t baseY, uint8_t width, uint8_t height, uint8_t mode) {
 	for (uint8_t x = baseX; x <= baseX + width; x++) {
 		for (uint8_t y = baseY; y <= baseY + height; y++) {
 			lcd_DrawPixel(x, y, mode);
@@ -823,8 +823,9 @@ void LcdStrBig (unsigned char *data) {
 }
 //
 /*-----Функция вывода большой и жирной строки с текущей позиции-----*/
-void LcdStrBold (unsigned char *data)
-{ while(*data) LcdChrBold(*(data++));
+void LcdStrBold (unsigned char *data) {
+	while(*data)
+		LcdChrBold(*(data++));
 }
 //
 /*-----Функция вывода шкалы регулируемого параметра с высотой и координатами шрифта-----*/

@@ -157,36 +157,22 @@ void DrawProgressBar(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t per
 	}
 #endif
 	lcd_DrawLineH(y2, x1+2, x2-2, PIXEL_ON);	// Линия снизу
-	//lcd_DrawLine(x1+2, y2, x2-2, y2, 1);
 	lcd_DrawLineV(x2-2, y1, y2, PIXEL_ON);		// Линия справа
-	//lcd_DrawLine(x2-2, y1, x2-2, y2, 1);
 	lcd_DrawLineV(x1+2, y1, y2, PIXEL_ON);		// Линия слева
-	//lcd_DrawLine(x1+2, y1, x1+2, y2, 1);
 	lcd_DrawLineH(y1, x1+2, x2-2, PIXEL_ON);	// Линия сверху
-	//lcd_DrawLine(x1+2, y1, x2-2, y1, 1);
 
 	lcd_DrawLineV(x2-1, y1+1, y2-1, PIXEL_ON);	// Укороченная линия справа
-	//lcd_DrawLine(x2-1, y1+1, x2-1,y2-1, 1);
 	lcd_DrawLineV(x1+1, y1+1, y2-1, PIXEL_ON);	// Укороченная линия слева
-	//lcd_DrawLine(x1+1, y1+1, x1+1, y2-1, 1);
 	lcd_DrawLineV(x2, y1+2, y2-2, PIXEL_ON);	// Ещё укороченная линия справа
-	//lcd_DrawLine(x2, y1+2, x2, y2-2, 1);
 	lcd_DrawLineV(x1, y1+2, y2-2, PIXEL_ON);	// Ещё укороченная линия слева
-	lcd_DrawLine(x1, y1+2, x1, y2-2, 1);
 
 	// ширина закрашиваемой области
 	uint16_t line = ((uint16_t)persent)*(x2-x1-8)/100;
 	uint8_t fillWidth = (uint8_t)line;
 	uint8_t emptyWidth = x2 - x1 - 8 - fillWidth;
-	lcd_DrawRect(x1+4, y1+2, x1+4 + fillWidth, y2-y1-4, PIXEL_ON);
-	lcd_DrawRect(x1+4 + fillWidth, y1+2, emptyWidth, y2-y1-4, PIXEL_OFF);
-
-//	for (uint8_t y = y1 + 2; y < y2 - 1; y++) {
-//		lcd_DrawLine(x1+4, y, x2-4, y, PIXEL_OFF);       //Очистка предыдущей заливки
-//		if (persent > 0) {
-//			lcd_DrawLine(x1+4, y, x1+4+line, y, PIXEL_ON); //Заливка
-//		}
-//	}
+	uint8_t height = y2-y1-4;
+	lcd_DrawRect(x1+4, y1+2, fillWidth, height, PIXEL_ON);
+	lcd_DrawRect(x1+4 + fillWidth, y1+2, emptyWidth, height, PIXEL_OFF);
 }
 
 /*-----Функция рисования горизонтального прогресс-бара в указанной строке и заполнения его на "процент"------*/
